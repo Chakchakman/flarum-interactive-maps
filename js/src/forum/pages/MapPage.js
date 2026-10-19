@@ -22,6 +22,9 @@ export default class MapPage extends Page {
     this.pendingGridChanges = {};
     this.gridSaveInFlight = false;
     this.tokenSaveCount = 0;
+    this.tokenMoves = new Map();
+    this.localEditRevision = 0;
+    this.refreshRequestSeq = 0;
     this.imageUrl = null;
     this.imageDimensions = null;
     this.imageLoadFailed = false;
@@ -56,21 +59,28 @@ export default class MapPage extends Page {
   }
 
   async refresh(silent = false) {
-    if (this.hasPendingChanges()) return;
+    if (this.removed || this.hasPendingChanges()) return;
+    const revision = this.localEditRevision;
+    const requestId = ++this.refreshRequestSeq;
     try {
       const result = await app.request({ method: 'GET', url: endpoint(`chak-maps/${this.mapId}`) });
-      if (!this.hasPendingChanges()) {
+      // A poll that began before a drag/save must never replace newer local
+      // coordinates, even when the save has already completed.
+      if (!this.removed && requestId === this.refreshRequestSeq
+          && revision === this.localEditRevision && !this.hasPendingChanges()) {
         this.map = result.data;
         this.loadBackgroundDimensions(this.map.backgroundUrl);
         this.canManage = !!result.canManage;
         app.setTitle(this.map.title);
+        if (!silent) this.error = '';
       }
-      if (!silent) this.error = '';
     } catch (error) {
-      if (!silent) this.error = displayError(error);
+      if (!silent && !this.removed && revision === this.localEditRevision) {
+        this.error = displayError(error);
+      }
     } finally {
       this.loading = false;
-      m.redraw();
+      if (!this.removed) m.redraw();
     }
   }
 
@@ -107,15 +117,17 @@ export default class MapPage extends Page {
   }
 
   begin(event, token) {
-    if (!this.isMine(token)) return;
+    if (!this.isMine(token) || this.dragging) return;
     event.preventDefault();
+    // Invalidates GET requests started before the user's new action.
+    this.localEditRevision += 1;
     const rect = event.currentTarget.closest('.ChakMap-canvas').getBoundingClientRect();
-    this.dragging = { token, element: event.currentTarget, rect, origX: token.x, origY: token.y };
+    this.dragging = { token, element: event.currentTarget, rect, pointerId: event.pointerId, origX: token.x, origY: token.y };
     event.currentTarget.classList.add('is-dragging');
   }
 
   move(event) {
-    if (!this.dragging) return;
+    if (!this.dragging || event.pointerId !== this.dragging.pointerId) return;
     const { token, element, rect } = this.dragging;
     token.x = clamp((event.clientX - rect.left) / rect.width, 0, 1);
     token.y = clamp((event.clientY - rect.top) / rect.height, 0, 1);
@@ -123,9 +135,9 @@ export default class MapPage extends Page {
     element.style.top = `${token.y * 100}%`;
   }
 
-  async end() {
-    if (!this.dragging) return;
-    const { token, element, rect, origX, origY } = this.dragging;
+  end(event) {
+    if (!this.dragging || (event && event.pointerId !== this.dragging.pointerId)) return;
+    const { token, element, origX, origY } = this.dragging;
     this.dragging = null;
     element.classList.remove('is-dragging');
     if (this.map.snapToGrid && this.map.gridEnabled && this.imageDimensions) {
@@ -138,22 +150,62 @@ export default class MapPage extends Page {
     }
     element.style.left = `${token.x * 100}%`;
     element.style.top = `${token.y * 100}%`;
+    this.queueTokenMove(token, { x: origX, y: origY });
+  }
+
+  // Serialize writes per token: multiple fast moves retain only the latest
+  // destination, so an older POST response cannot jump the token backwards.
+  queueTokenMove(token, originalPosition) {
+    let entry = this.tokenMoves.get(token.id);
+    if (!entry) {
+      entry = { token, confirmed: originalPosition, pending: null, saving: false };
+      this.tokenMoves.set(token.id, entry);
+    }
+    entry.token = token;
+    entry.pending = { x: token.x, y: token.y };
+    this.localEditRevision += 1;
+    this.flushTokenMove(token.id);
+  }
+
+  async flushTokenMove(id) {
+    const entry = this.tokenMoves.get(id);
+    if (!entry || entry.saving || !entry.pending) return;
+
+    const requested = entry.pending;
+    entry.pending = null;
+    entry.saving = true;
     this.tokenSaveCount += 1;
+
     try {
       const result = await app.request({
         method: 'POST',
-        url: endpoint(`chak-tokens/${token.id}/move`),
-        body: { x: token.x, y: token.y },
+        url: endpoint(`chak-tokens/${id}/move`),
+        body: requested,
       });
-      Object.assign(token, result.data);
+      // Record server-confirmed coordinates, but never Object.assign the whole
+      // stale response onto a token currently being moved by the user.
+      entry.confirmed = {
+        x: Number(result.data?.x ?? requested.x),
+        y: Number(result.data?.y ?? requested.y),
+      };
       this.error = '';
     } catch (error) {
-      token.x = origX;
-      token.y = origY;
       this.error = `Перемещение не сохранено: ${displayError(error)}`;
+      // Revert only if there is no newer destination or active drag.
+      // An in-progress newer move must remain under the player's control.
+      if (!entry.pending && this.dragging?.token?.id !== id) {
+        entry.token.x = entry.confirmed.x;
+        entry.token.y = entry.confirmed.y;
+      }
     } finally {
+      entry.saving = false;
       this.tokenSaveCount -= 1;
-      m.redraw();
+      if (entry.pending) {
+        this.flushTokenMove(id);
+      } else if (this.dragging?.token?.id !== id) {
+        this.tokenMoves.delete(id);
+      }
+      if (!this.removed) m.redraw();
     }
   }
 
@@ -162,6 +214,7 @@ export default class MapPage extends Page {
   saveGrid(changes) {
     if (!this.canManage || !this.map) return;
     Object.assign(this.map, changes);
+    this.localEditRevision += 1;
     Object.assign(this.pendingGridChanges, changes);
     this.error = '';
     window.clearTimeout(this.gridSaveTimer);
