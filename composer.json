@@ -21,7 +21,7 @@
   },
   "autoload": {
     "psr-4": {
-      "ChakChakMan\\InteractiveMaps\\": "src/"
+      "ChakChakman\\InteractiveMaps\\": "src/"
     }
   },
   "extra": {
