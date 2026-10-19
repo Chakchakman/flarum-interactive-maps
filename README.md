@@ -15,7 +15,7 @@
 - Позиции хранятся в MariaDB в таблице `chak_tokens`.
 - Каждые 5 секунд другие открытые вкладки обновляют расположение фишек.
 
-**Пока нет:** загрузки файлов через UI, произвольных фигур/гексов, zoom/pan, истории действий, продвинутых групповых прав, тумана войны. Карты пока публичны для всех посетителей форума. **Не размещай секретные карты в этой версии.** Управление картами доступно только администратору.
+**Пока нет:** загрузки файлов через UI, произвольных фигур/гексов, zoom/pan, истории действий, продвинутых групповых прав, тумана войны. Просмотр карт доступен всем зарегистрированным пользователям форума, а не только участникам конкретной игры. **Не размещай секретные карты в этой версии.** Управление картами доступно только администратору.
 
 ## Установка на Windows — PowerShell
 
@@ -137,3 +137,13 @@ extension/
 ## Следующий этап
 
 Настройка редактора: загрузка своих фонов и токенов, список пользователей с автопоиском, роли «мастер» и «игрок», панорамирование и масштабирование карты.
+
+## Floxum audit fixes (draft)
+
+This branch addresses Floxum beta.1 findings #1, #2, #3, #5, #6, and #7:
+- Removed hardcoded localhost image URLs and development-only UI note.
+- Added eager-loaded token owner relationship to eliminate per-token User::find() queries.
+- Restricted list/show map APIs to authenticated users via Flarum's assertRegistered().
+- Measured background image natural dimensions in the browser, used responsive canvas aspect ratio, and rendered an SVG grid using the exact same original-image coordinates as token snapping; no DB migration or PHP image fetch needed.
+
+**Compatibility:** Public maps are no longer accessible to anonymous visitors. Already stored map and token data remain unchanged. Existing simple JSON responses remain for this patch; JSON:API migration is still pending; the image-geometry fix must be manually tested on multiple aspect ratios and viewport sizes. The compiled js/dist/forum.js must be regenerated before releasing this branch, and the PHP/JS functionality must be exercised in the local Flarum test forum. This is not a production release.
