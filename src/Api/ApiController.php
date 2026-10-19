@@ -39,7 +39,7 @@ abstract class ApiController
         $raw = $request->getQueryParams()['id'] ?? $request->getAttribute('id');
         $id = filter_var($raw, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 
-        return $id === false ? 0 : $id;
+        return is_int($id) && $id > 0 ? $id : 0;
     }
 
     protected function url($url): bool
