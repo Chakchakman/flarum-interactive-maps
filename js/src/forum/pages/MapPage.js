@@ -21,7 +21,7 @@ export default class MapPage extends Page {
     this.refreshTimer = null;
     this.removed = false;
     this.localRevision = 0;
-    this.refreshSeq = 0;
+    this.refreshInFlight = false;
     this.gridSaving = 0;
     this.moves = new LatestTokenMoveQueue(
       async (id, position) => {
@@ -82,25 +82,33 @@ export default class MapPage extends Page {
   }
 
   async refresh(silent = false) {
-    if (this.removed || this.hasPendingLocalChanges()) return;
+    // Docker/Windows may take longer than the 5-second poll interval.
+    // Never start another GET while one is still in flight: otherwise every
+    // successful response can be discarded as stale and the map stays blank.
+    if (this.removed || this.refreshInFlight || this.hasPendingLocalChanges()) return;
+    this.refreshInFlight = true;
     const revision = this.localRevision;
-    const requestId = ++this.refreshSeq;
+
     try {
       const result = await app.request({ method: 'GET', url: endpoint(`chak-maps/${this.mapId}`) });
-      // A GET started before the user dragged a token or edited the grid
-      // must not overwrite newer client state even when the write finished.
+      if (!result?.data || !Array.isArray(result.data.tokens)) {
+        throw new Error(`Некорректный ответ API для карты #${this.mapId}`);
+      }
+      // A GET started before a drag or grid edit must never overwrite those
+      // edits, even if the write finished while this GET was pending.
       if (!this.removed && !this.hasPendingLocalChanges()
-          && revision === this.localRevision && requestId === this.refreshSeq) {
+          && revision === this.localRevision) {
         this.map = result.data;
         this.canManage = !!result.canManage;
         app.setTitle(this.map.title);
         if (!silent) this.error = '';
       }
     } catch (error) {
-      if (!silent && !this.removed && revision === this.localRevision) {
-        this.error = displayError(error);
+      if (!this.removed && !silent && revision === this.localRevision) {
+        this.error = `Не удалось загрузить карту #${this.mapId}: ${displayError(error)}`;
       }
     } finally {
+      this.refreshInFlight = false;
       this.loading = false;
       if (!this.removed) m.redraw();
     }
@@ -219,7 +227,10 @@ export default class MapPage extends Page {
 
   view() {
     if (this.loading) return <div className="container ChakMaps-page"><p>Загружаем карту…</p></div>;
-    if (!this.map) return <div className="container ChakMaps-page"><p className="ChakMaps-error">{this.error || 'Карта не найдена'}</p></div>;
+    if (!this.map) return <div className="container ChakMaps-page">
+      <p className="ChakMaps-error">{this.error || `Не удалось загрузить карту #${this.mapId}. Проверь ответ API.`}</p>
+      <p><Link href={app.route('chak.maps')}>← К списку карт</Link></p>
+    </div>;
 
     const map = this.map;
     return (
