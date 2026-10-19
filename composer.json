@@ -1,14 +1,27 @@
+
 {
   "name": "chakchakman/flarum-interactive-maps",
   "description": "Interactive tabletop maps and controlled character tokens for Flarum",
   "type": "flarum-extension",
   "license": "MIT",
+  "homepage": "https://github.com/Chakchakman/flarum-interactive-maps",
+  "authors": [
+    {
+      "name": "Chakchakman",
+      "email": "awesome.grayman@gmail.com",
+      "homepage": "https://github.com/Chakchakman",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/Chakchakman/flarum-interactive-maps/issues"
+  },
   "require": {
     "flarum/core": "^2.0"
   },
   "autoload": {
     "psr-4": {
-      "ChakChakman\\InteractiveMaps\\": "src/"
+      "ChakChakMan\\InteractiveMaps\\": "src/"
     }
   },
   "extra": {
