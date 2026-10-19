@@ -9,7 +9,7 @@ export default class MapListPage extends Page {
     this.canManage = false;
     this.loading = true;
     this.title = '';
-    this.backgroundUrl = 'http://localhost:8081/map.jpg';
+    this.backgroundUrl = '';
     this.error = '';
     this.creating = false;
     this.load();
@@ -81,8 +81,7 @@ export default class MapListPage extends Page {
                 <label>Название</label>
                 <input className="FormControl" required maxlength="160" value={this.title} oninput={(event) => this.title = event.target.value} placeholder="Склад Zetatech" />
                 <label>Адрес фонового изображения</label>
-                <input className="FormControl" required value={this.backgroundUrl} oninput={(event) => this.backgroundUrl = event.target.value} placeholder="http://localhost:8081/map.jpg" />
-                <p className="ChakMaps-muted">Для проверки уже подставлена картинка из твоего map-correct на порту 8081.</p>
+                <input className="FormControl" required value={this.backgroundUrl} oninput={(event) => this.backgroundUrl = event.target.value} placeholder="https://example.com/map.jpg" />
                 <button type="submit" className="Button Button--primary" disabled={this.creating}>{this.creating ? 'Создание…' : 'Создать карту'}</button>
               </form>
             )}
