@@ -31,7 +31,7 @@ export default class MapPage extends Page {
     this.imageDimensions = null;
     this.imageLoadFailed = false;
     this.removed = false;
-    if (/^[1-9]\\d*$/.test(this.mapId)) {
+    if (/^[1-9]\d*$/.test(this.mapId)) {
       this.refresh();
     } else {
       this.loading = false;
