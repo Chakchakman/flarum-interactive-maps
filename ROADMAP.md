@@ -16,14 +16,18 @@ Status: working plan, agreed 2026-10-20. Versions are milestones, not release da
 | v0.1.0-rc.1 | Release candidate | Feature freeze; installation/upgrade/security regression checklist |
 | v0.1.0 | First stable public release | RC accepted on clean Flarum installation; documented rollback path |
 
+### Target product experience (agreed 2026-10-20)
+
+**Staff-only map library, gameplay inside discussion posts.** The /maps catalog is not the players' destination. Admins and authorized moderators/game masters manage maps in a staff-facing control panel. Players see embedded interactive maps inside the discussion posts they are permitted to view, and can move only their own assigned tokens. See [PRODUCT-VISION.md](docs/PRODUCT-VISION.md) for the permissions and implementation design.
+
 ### Future features (provisional)
 
-- **v0.2.0:** game sessions, GM roles, per-map permissions and private maps.
+- **v0.2.0:** **priority feature — embed interactive maps in discussion posts**, staff-only map catalog and configurable manage/embed permissions, server-validated per-post/per-discussion visibility, player move-own-token inside the post. This supersedes the earlier v0.7 embedding schedule.
 - **v0.3.0:** multi-client token sync; collision/conflict handling and presence.
 - **v0.4.0:** pan, zoom, measurement tools and map markers.
 - **v0.5.0:** image upload, map editor, overlays and layers.
 - **v0.6.0:** fog of war, hidden tokens, visibility and conditions.
-- **v0.7.0:** embedded maps in discussions and expanded Flarum integrations.
+- **v0.7.0:** more advanced game sessions, scoped GM assignments and other Flarum integrations.
 - **v1.0.0:** mature documentation, compatibility tests, release/upgrade guarantee.
 
 ## Branch and release discipline
