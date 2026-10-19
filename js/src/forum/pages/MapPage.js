@@ -1,6 +1,7 @@
 import Page from 'flarum/common/components/Page';
 import Link from 'flarum/common/components/Link';
 import { endpoint, displayError } from '../api';
+import { LatestTokenMoveQueue } from '../tokenMoveQueue.mjs';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -18,6 +19,41 @@ export default class MapPage extends Page {
     this.adding = false;
     this.dragging = null;
     this.refreshTimer = null;
+    this.removed = false;
+    this.localRevision = 0;
+    this.refreshInFlight = false;
+    this.gridSaving = 0;
+    this.moves = new LatestTokenMoveQueue(
+      async (id, position) => {
+        const response = await app.request({
+          method: 'POST',
+          url: endpoint(`chak-tokens/${id}/move`),
+          body: position,
+        });
+        return response.data;
+      },
+      {
+        onSuccess: () => {
+          if (this.error.startsWith('Перемещение не сохранено:')) this.error = '';
+        },
+        onFailure: (id, lastConfirmed, error) => {
+          if (this.removed) return;
+          this.error = `Перемещение не сохранено: ${displayError(error)}`;
+          // Do not interrupt a newer drag in progress. The player may already
+          // be carrying the token towards another valid destination.
+          if (String(this.dragging?.token.id) !== id) {
+            const current = this.map?.tokens.find((token) => String(token.id) === id);
+            if (current) {
+              current.x = lastConfirmed.x;
+              current.y = lastConfirmed.y;
+            }
+          }
+        },
+        onDrained: () => {
+          if (!this.removed) m.redraw();
+        },
+      }
+    );
     this.refresh();
   }
 
@@ -34,27 +70,47 @@ export default class MapPage extends Page {
   }
 
   onremove(vnode) {
+    this.removed = true;
     window.removeEventListener('pointermove', this.moveListener);
     window.removeEventListener('pointerup', this.endListener);
     window.removeEventListener('pointercancel', this.endListener);
     window.clearInterval(this.refreshTimer);
   }
 
+  hasPendingLocalChanges() {
+    return !!this.dragging || this.moves.hasPending() || this.gridSaving > 0;
+  }
+
   async refresh(silent = false) {
-    if (this.dragging) return;
+    // Docker/Windows may take longer than the 5-second poll interval.
+    // Never start another GET while one is still in flight: otherwise every
+    // successful response can be discarded as stale and the map stays blank.
+    if (this.removed || this.refreshInFlight || this.hasPendingLocalChanges()) return;
+    this.refreshInFlight = true;
+    const revision = this.localRevision;
+
     try {
       const result = await app.request({ method: 'GET', url: endpoint(`chak-maps/${this.mapId}`) });
-      if (!this.dragging) {
+      if (!result?.data || !Array.isArray(result.data.tokens)) {
+        throw new Error(`Некорректный ответ API для карты #${this.mapId}`);
+      }
+      // A GET started before a drag or grid edit must never overwrite those
+      // edits, even if the write finished while this GET was pending.
+      if (!this.removed && !this.hasPendingLocalChanges()
+          && revision === this.localRevision) {
         this.map = result.data;
         this.canManage = !!result.canManage;
         app.setTitle(this.map.title);
+        if (!silent) this.error = '';
       }
-      if (!silent) this.error = '';
     } catch (error) {
-      if (!silent) this.error = displayError(error);
+      if (!this.removed && !silent && revision === this.localRevision) {
+        this.error = `Не удалось загрузить карту #${this.mapId}: ${displayError(error)}`;
+      }
     } finally {
+      this.refreshInFlight = false;
       this.loading = false;
-      m.redraw();
+      if (!this.removed) m.redraw();
     }
   }
 
@@ -64,15 +120,19 @@ export default class MapPage extends Page {
   }
 
   begin(event, token) {
-    if (!this.isMine(token)) return;
+    if (!this.isMine(token) || this.dragging) return;
     event.preventDefault();
+    this.localRevision += 1;
     const rect = event.currentTarget.closest('.ChakMap-canvas').getBoundingClientRect();
-    this.dragging = { token, element: event.currentTarget, rect, origX: token.x, origY: token.y };
+    this.dragging = {
+      token, element: event.currentTarget, rect,
+      pointerId: event.pointerId, origX: token.x, origY: token.y,
+    };
     event.currentTarget.classList.add('is-dragging');
   }
 
   move(event) {
-    if (!this.dragging) return;
+    if (!this.dragging || event.pointerId !== this.dragging.pointerId) return;
     const { token, element, rect } = this.dragging;
     token.x = clamp((event.clientX - rect.left) / rect.width, 0, 1);
     token.y = clamp((event.clientY - rect.top) / rect.height, 0, 1);
@@ -80,9 +140,9 @@ export default class MapPage extends Page {
     element.style.top = `${token.y * 100}%`;
   }
 
-  async end() {
-    if (!this.dragging) return;
-    const { token, element, rect, origX, origY } = this.dragging;
+  end(event) {
+    if (!this.dragging || event.pointerId !== this.dragging.pointerId) return;
+    const { token, element, origX, origY } = this.dragging;
     this.dragging = null;
     element.classList.remove('is-dragging');
     if (this.map.snapToGrid && this.map.gridEnabled) {
@@ -97,38 +157,37 @@ export default class MapPage extends Page {
     }
     element.style.left = `${token.x * 100}%`;
     element.style.top = `${token.y * 100}%`;
-    try {
-      const result = await app.request({
-        method: 'POST',
-        url: endpoint(`chak-tokens/${token.id}/move`),
-        body: { x: token.x, y: token.y },
-      });
-      Object.assign(token, result.data);
-      this.error = '';
-    } catch (error) {
-      token.x = origX;
-      token.y = origY;
-      this.error = `Перемещение не сохранено: ${displayError(error)}`;
-    }
+    this.localRevision += 1;
+    this.moves.enqueue(
+      token.id,
+      { x: token.x, y: token.y },
+      { x: origX, y: origY }
+    );
     m.redraw();
   }
 
   async saveGrid(changes) {
     if (!this.canManage) return;
     const previous = { ...this.map };
+    this.localRevision += 1;
+    this.gridSaving += 1;
     Object.assign(this.map, changes);
     m.redraw();
     try {
       const result = await app.request({
         method: 'PATCH', url: endpoint(`chak-maps/${this.mapId}`), body: changes,
       });
-      this.map = result.data;
+      // Keep the live token collection: grid PATCH responses can contain
+      // outdated token positions from the time of the request.
+      this.map = { ...result.data, tokens: this.map.tokens };
       this.error = '';
     } catch (error) {
-      this.map = previous;
+      this.map = { ...previous, tokens: this.map.tokens };
       this.error = displayError(error);
+    } finally {
+      this.gridSaving -= 1;
+      m.redraw();
     }
-    m.redraw();
   }
 
   async addToken(event) {
@@ -168,7 +227,10 @@ export default class MapPage extends Page {
 
   view() {
     if (this.loading) return <div className="container ChakMaps-page"><p>Загружаем карту…</p></div>;
-    if (!this.map) return <div className="container ChakMaps-page"><p className="ChakMaps-error">{this.error || 'Карта не найдена'}</p></div>;
+    if (!this.map) return <div className="container ChakMaps-page">
+      <p className="ChakMaps-error">{this.error || `Не удалось загрузить карту #${this.mapId}. Проверь ответ API.`}</p>
+      <p><Link href={app.route('chak.maps')}>← К списку карт</Link></p>
+    </div>;
 
     const map = this.map;
     return (
