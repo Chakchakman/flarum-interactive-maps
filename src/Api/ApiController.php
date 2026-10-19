@@ -33,7 +33,13 @@ abstract class ApiController
 
     protected function id(Request $request): int
     {
-        return (int) ($request->getQueryParams()['id'] ?? 0);
+        // Flarum normally merges route placeholders into query parameters.
+        // The attribute fallback also supports middleware that keeps route
+        // arguments separate from the URL query.
+        $raw = $request->getQueryParams()['id'] ?? $request->getAttribute('id');
+        $id = filter_var($raw, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+        return $id === false ? 0 : $id;
     }
 
     protected function url($url): bool
