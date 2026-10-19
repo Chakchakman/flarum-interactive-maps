@@ -18,6 +18,10 @@ export default class MapPage extends Page {
     this.adding = false;
     this.dragging = null;
     this.refreshTimer = null;
+    this.gridSaveTimer = null;
+    this.pendingGridChanges = {};
+    this.gridSaveInFlight = false;
+    this.tokenSaveCount = 0;
     this.imageUrl = null;
     this.imageDimensions = null;
     this.imageLoadFailed = false;
@@ -43,13 +47,19 @@ export default class MapPage extends Page {
     window.removeEventListener('pointerup', this.endListener);
     window.removeEventListener('pointercancel', this.endListener);
     window.clearInterval(this.refreshTimer);
+    window.clearTimeout(this.gridSaveTimer);
+  }
+
+  hasPendingChanges() {
+    return this.dragging || this.tokenSaveCount > 0 || this.gridSaveInFlight
+      || this.gridSaveTimer !== null || Object.keys(this.pendingGridChanges).length > 0;
   }
 
   async refresh(silent = false) {
-    if (this.dragging) return;
+    if (this.hasPendingChanges()) return;
     try {
       const result = await app.request({ method: 'GET', url: endpoint(`chak-maps/${this.mapId}`) });
-      if (!this.dragging) {
+      if (!this.hasPendingChanges()) {
         this.map = result.data;
         this.loadBackgroundDimensions(this.map.backgroundUrl);
         this.canManage = !!result.canManage;
@@ -128,6 +138,7 @@ export default class MapPage extends Page {
     }
     element.style.left = `${token.x * 100}%`;
     element.style.top = `${token.y * 100}%`;
+    this.tokenSaveCount += 1;
     try {
       const result = await app.request({
         method: 'POST',
@@ -140,26 +151,56 @@ export default class MapPage extends Page {
       token.x = origX;
       token.y = origY;
       this.error = `Перемещение не сохранено: ${displayError(error)}`;
+    } finally {
+      this.tokenSaveCount -= 1;
+      m.redraw();
     }
+  }
+
+  // Update the grid immediately; avoid blocking every slider movement on HTTP.
+  // Consecutive edits are combined into a single request after a short pause.
+  saveGrid(changes) {
+    if (!this.canManage || !this.map) return;
+    Object.assign(this.map, changes);
+    Object.assign(this.pendingGridChanges, changes);
+    this.error = '';
+    window.clearTimeout(this.gridSaveTimer);
+    this.gridSaveTimer = window.setTimeout(() => {
+      this.gridSaveTimer = null;
+      this.flushGridChanges();
+    }, 400);
     m.redraw();
   }
 
-  async saveGrid(changes) {
-    if (!this.canManage) return;
-    const previous = { ...this.map };
-    Object.assign(this.map, changes);
-    m.redraw();
+  async flushGridChanges() {
+    if (this.gridSaveInFlight || !Object.keys(this.pendingGridChanges).length) return;
+    const changes = this.pendingGridChanges;
+    this.pendingGridChanges = {};
+    this.gridSaveInFlight = true;
     try {
-      const result = await app.request({
-        method: 'PATCH', url: endpoint(`chak-maps/${this.mapId}`), body: changes,
+      await app.request({
+        method: 'PATCH',
+        url: endpoint(`chak-maps/${this.mapId}`),
+        body: changes,
       });
-      this.map = result.data;
+      // Do not replace this.map with the response: it may contain old tokens
+      // or grid settings the user edited while the request was in flight.
       this.error = '';
     } catch (error) {
-      this.map = previous;
-      this.error = displayError(error);
+      // Keep edits on screen and make them retryable rather than silently
+      // pretending a failed write was saved.
+      this.pendingGridChanges = { ...changes, ...this.pendingGridChanges };
+      this.error = `Настройки сетки не сохранены: ${displayError(error)}`;
+    } finally {
+      this.gridSaveInFlight = false;
+      if (!this.error && Object.keys(this.pendingGridChanges).length && this.gridSaveTimer === null) {
+        this.gridSaveTimer = window.setTimeout(() => {
+          this.gridSaveTimer = null;
+          this.flushGridChanges();
+        }, 150);
+      }
+      m.redraw();
     }
-    m.redraw();
   }
 
   async addToken(event) {
@@ -257,11 +298,13 @@ export default class MapPage extends Page {
                 <section className="ChakMaps-panel">
                   <h3>Настройки сетки</h3>
                   <label>Размер клетки: {map.gridSize} условных px</label>
-                  <input type="range" min="12" max="256" step="1" value={map.gridSize} onchange={(e) => this.saveGrid({ gridSize: Number(e.target.value) })} />
+                  {(this.gridSaveInFlight || this.gridSaveTimer !== null || Object.keys(this.pendingGridChanges).length > 0)
+                    && <p className="ChakMaps-muted">Настройки изменены — сохранение {this.gridSaveInFlight ? 'выполняется…' : 'ожидается…'}</p>}
+                  <input type="range" min="12" max="256" step="1" value={map.gridSize} oninput={(e) => this.saveGrid({ gridSize: Number(e.target.value) })} />
                   <label>Сдвиг по X: {map.gridOffsetX}px</label>
-                  <input type="range" min="-100" max="100" value={map.gridOffsetX} onchange={(e) => this.saveGrid({ gridOffsetX: Number(e.target.value) })} />
+                  <input type="range" min="-100" max="100" value={map.gridOffsetX} oninput={(e) => this.saveGrid({ gridOffsetX: Number(e.target.value) })} />
                   <label>Сдвиг по Y: {map.gridOffsetY}px</label>
-                  <input type="range" min="-100" max="100" value={map.gridOffsetY} onchange={(e) => this.saveGrid({ gridOffsetY: Number(e.target.value) })} />
+                  <input type="range" min="-100" max="100" value={map.gridOffsetY} oninput={(e) => this.saveGrid({ gridOffsetY: Number(e.target.value) })} />
                   <label><input type="checkbox" checked={map.gridEnabled} onchange={(e) => this.saveGrid({ gridEnabled: e.target.checked })} /> Показывать сетку</label>
                   <label><input type="checkbox" checked={map.snapToGrid} onchange={(e) => this.saveGrid({ snapToGrid: e.target.checked })} /> Привязывать фишки</label>
                 </section>
