@@ -18,6 +18,10 @@ export default class MapPage extends Page {
     this.adding = false;
     this.dragging = null;
     this.refreshTimer = null;
+    this.imageUrl = null;
+    this.imageDimensions = null;
+    this.imageLoadFailed = false;
+    this.removed = false;
     this.refresh();
   }
 
@@ -34,6 +38,7 @@ export default class MapPage extends Page {
   }
 
   onremove(vnode) {
+    this.removed = true;
     window.removeEventListener('pointermove', this.moveListener);
     window.removeEventListener('pointerup', this.endListener);
     window.removeEventListener('pointercancel', this.endListener);
@@ -46,6 +51,7 @@ export default class MapPage extends Page {
       const result = await app.request({ method: 'GET', url: endpoint(`chak-maps/${this.mapId}`) });
       if (!this.dragging) {
         this.map = result.data;
+        this.loadBackgroundDimensions(this.map.backgroundUrl);
         this.canManage = !!result.canManage;
         app.setTitle(this.map.title);
       }
@@ -56,6 +62,33 @@ export default class MapPage extends Page {
       this.loading = false;
       m.redraw();
     }
+  }
+
+  // The original image pixels are the canonical grid space on every device.
+  // Image.naturalWidth/Height are accessible for ordinary cross-origin images
+  // without fetching the URL from PHP (which would introduce SSRF risks).
+  loadBackgroundDimensions(url) {
+    if (this.imageUrl === url) return;
+    this.imageUrl = url;
+    this.imageDimensions = null;
+    this.imageLoadFailed = false;
+
+    const image = new Image();
+    image.onload = () => {
+      if (this.removed || this.imageUrl !== url) return;
+      if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+        this.imageDimensions = { width: image.naturalWidth, height: image.naturalHeight };
+      } else {
+        this.imageLoadFailed = true;
+      }
+      m.redraw();
+    };
+    image.onerror = () => {
+      if (this.removed || this.imageUrl !== url) return;
+      this.imageLoadFailed = true;
+      m.redraw();
+    };
+    image.src = url;
   }
 
   isMine(token) {
@@ -85,15 +118,13 @@ export default class MapPage extends Page {
     const { token, element, rect, origX, origY } = this.dragging;
     this.dragging = null;
     element.classList.remove('is-dragging');
-    if (this.map.snapToGrid && this.map.gridEnabled) {
-      // Grid units are measured against the original 1280 x 853 map,
-      // not against the browser window, so resizing preserves cell positions.
+    if (this.map.snapToGrid && this.map.gridEnabled && this.imageDimensions) {
       const snap = (n, referenceSize, offset) => clamp(
         (Math.floor((n * referenceSize - offset) / this.map.gridSize) + 0.5) * this.map.gridSize / referenceSize + offset / referenceSize,
         0, 1
       );
-      token.x = snap(token.x, 1280, this.map.gridOffsetX);
-      token.y = snap(token.y, 853, this.map.gridOffsetY);
+      token.x = snap(token.x, this.imageDimensions.width, this.map.gridOffsetX);
+      token.y = snap(token.y, this.imageDimensions.height, this.map.gridOffsetY);
     }
     element.style.left = `${token.x * 100}%`;
     element.style.top = `${token.y * 100}%`;
@@ -171,18 +202,27 @@ export default class MapPage extends Page {
     if (!this.map) return <div className="container ChakMaps-page"><p className="ChakMaps-error">{this.error || 'Карта не найдена'}</p></div>;
 
     const map = this.map;
+    const imageSize = this.imageDimensions;
+    const gridPatternId = `ChakMap-grid-${map.id}`;
     return (
       <div className="container ChakMaps-page ChakMap-page">
         <div className="ChakMaps-top"><Link href={app.route('chak.maps')}>← Все карты</Link><h1>{map.title}</h1><button className="Button" onclick={() => this.refresh()}>Обновить позиции</button></div>
         {this.error && <p className="ChakMaps-error">{this.error}</p>}
         <div className="ChakMap-layout">
           <div className="ChakMap-stage">
-            <div className="ChakMap-canvas" style={{ backgroundImage: `url("${map.backgroundUrl.replace(/"/g, '%22')}")` }}>
-              {map.gridEnabled && (
-                <div className="ChakMap-grid" style={{
-                  backgroundSize: `${map.gridSize * 100 / 1280}% ${map.gridSize * 100 / 853}%`,
-                  backgroundPosition: `${map.gridOffsetX * 100 / 1280}% ${map.gridOffsetY * 100 / 853}%`,
-                }} />
+            <div className="ChakMap-canvas" style={{
+              backgroundImage: `url("${map.backgroundUrl.replace(/"/g, '%22')}")`,
+              aspectRatio: imageSize ? `${imageSize.width} / ${imageSize.height}` : '16 / 9',
+            }}>
+              {map.gridEnabled && imageSize && (
+                <svg className="ChakMap-grid" viewBox={`0 0 ${imageSize.width} ${imageSize.height}`} preserveAspectRatio="none" aria-hidden="true">
+                  <defs>
+                    <pattern id={gridPatternId} x={map.gridOffsetX} y={map.gridOffsetY} width={map.gridSize} height={map.gridSize} patternUnits="userSpaceOnUse">
+                      <path d={`M 0 0 H ${map.gridSize} V ${map.gridSize}`} fill="none" stroke="rgba(255,255,255,.36)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                    </pattern>
+                  </defs>
+                  <rect width={imageSize.width} height={imageSize.height} fill={`url(#${gridPatternId})`} />
+                </svg>
               )}
               {map.tokens.map((token) => (
                 <img
@@ -197,6 +237,7 @@ export default class MapPage extends Page {
                 />
               ))}
             </div>
+            {this.imageLoadFailed && <p className="ChakMaps-error">Не удалось загрузить изображение карты. Проверь адрес фона; до загрузки сетка и привязка к ней недоступны.</p>}
             <p className="ChakMaps-muted">Перетаскивай собственную фишку мышью. Администратор может двигать все фишки. Координаты сохраняются в базе Flarum.</p>
           </div>
           <div className="ChakMap-sidebar">
