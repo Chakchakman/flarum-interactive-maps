@@ -57,14 +57,14 @@ abstract class ApiController
             'snapToGrid' => (bool) $map->snap_to_grid,
         ];
         if ($withTokens) {
-            $data['tokens'] = $map->tokens()->orderBy('id')->get()->map(fn (Token $token) => $this->tokenData($token))->all();
+            $data['tokens'] = $map->tokens()->with('owner')->orderBy('id')->get()->map(fn (Token $token) => $this->tokenData($token))->all();
         }
         return $data;
     }
 
     protected function tokenData(Token $token): array
     {
-        $owner = $token->owner_user_id ? User::find($token->owner_user_id) : null;
+        $owner = $token->owner;
         return [
             'id' => $token->id,
             'mapId' => $token->map_id,

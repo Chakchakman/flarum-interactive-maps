@@ -1,0 +1,41 @@
+name: Extension CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'fix/**'
+      - 'feature/**'
+
+jobs:
+  php-lint:
+    name: PHP syntax validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: none
+      - name: Syntax-check PHP files
+        run: |
+          set -euo pipefail
+          find . -path './js/node_modules' -prune -o -type f -name '*.php' -print0 |
+            xargs -0 -r -n 1 php -l
+
+  javascript-build:
+    name: JavaScript production build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: js
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: js/package-lock.json
+      - run: npm ci
+      - run: npm run build

@@ -12,6 +12,8 @@ class ListMapsController extends ApiController implements RequestHandlerInterfac
 {
     public function handle(Request $request): Response
     {
+        \Flarum\Http\RequestUtil::getActor($request)->assertRegistered();
+
         $maps = Map::query()->orderByDesc('id')->limit(100)->get()
             ->map(fn (Map $map) => $this->mapData($map))->all();
         return new JsonResponse(['data' => $maps, 'canManage' => $this->admin($request)]);

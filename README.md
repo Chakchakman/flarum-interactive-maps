@@ -137,3 +137,12 @@ extension/
 ## Следующий этап
 
 Настройка редактора: загрузка своих фонов и токенов, список пользователей с автопоиском, роли «мастер» и «игрок», панорамирование и масштабирование карты.
+
+## Floxum audit fixes (draft)
+
+This branch addresses Floxum beta.1 findings #1, #2, #3, #6, and #7:
+- Removed hardcoded localhost image URLs and development-only UI note.
+- Added eager-loaded token owner relationship to eliminate per-token User::find() queries.
+- Restricted list/show map APIs to authenticated users via Flarum's assertRegistered().
+
+**Compatibility:** Public maps are no longer accessible to anonymous visitors. Already stored map and token data remain unchanged. Existing simple JSON responses remain for this patch; JSON:API migration and grid dimension refactor are still pending and should be implemented and tested separately. The compiled js/dist/forum.js must be regenerated before releasing this branch, and the PHP/JS functionality must be exercised in the local Flarum test forum. This is not a production release.
