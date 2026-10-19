@@ -23,6 +23,7 @@ Branch: `fix/beta3-token-sync` (stacked on beta.2). No database migrations and n
 | 8 | Drop offline/disable network, then drag | Clear save error shown; location reverts to last acknowledged position when no newer edit exists |
 | 9 | Open same map in second browser tab and watch other player's token | Remote updates continue approximately every five seconds when local tab is idle |
 | 10 | Create new map, open/reload existing maps | Core beta.2 behaviour still functional; no console/PHP errors |
+| 11 | In DevTools set Network throttling to Slow 3G; open a map whose GET takes more than 5 seconds | Initial loader remains visible until first successful GET finishes; only one map GET pending at a time; map opens, not a false “Карта не найдена” |
 
 ## Automated tests
 
@@ -39,6 +40,7 @@ GitHub CI also runs PHP lint, the queue tests, and JS production build.
 
 ## Known boundaries
 
+- Map GET polling is single-flight, so slow responses are not superseded solely by elapsed time. If a user changes local state after the GET starts, that response is discarded intentionally.
 - The queue serializes moves **per token per browser tab only**. Simultaneous writes from different devices require v0.3 multi-client conflict handling.
 - In-flight moves are not resilient to a browser tab abruptly closing or prolonged network loss; display failure and retry by moving again.
 - Grid sizing/offset and staff deletion are left unchanged for their own release milestones.
