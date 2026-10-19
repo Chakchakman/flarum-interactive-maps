@@ -19,8 +19,8 @@
 .ChakMaps-top h1 { margin: 0 auto 0 0; font-size: 25px; }
 .ChakMap-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 18px; align-items: start; }
 .ChakMap-stage { min-width: 0; }
-.ChakMap-canvas { position: relative; width: 100%; aspect-ratio: 1280 / 853; background-position: center; background-repeat: no-repeat; background-size: 100% 100%; background-color: #1e2731; border-radius: 12px; overflow: hidden; user-select: none; touch-action: none; }
-.ChakMap-grid { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(to right, rgba(255,255,255,.36) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.36) 1px, transparent 1px); }
+.ChakMap-canvas { position: relative; width: 100%; aspect-ratio: 16 / 9; background-position: center; background-repeat: no-repeat; background-size: 100% 100%; background-color: #1e2731; border-radius: 12px; overflow: hidden; user-select: none; touch-action: none; }
+.ChakMap-grid { position: absolute; inset: 0; display: block; width: 100%; height: 100%; pointer-events: none; }
 .ChakMap-token { position: absolute; width: clamp(28px, 4.5vw, 62px); height: clamp(28px, 4.5vw, 62px); object-fit: contain; transform: translate(-50%, -50%); cursor: default; filter: drop-shadow(0 2px 4px #111); z-index: 3; }
 .ChakMap-token.is-mine { cursor: grab; outline: 2px solid #baf0e1; border-radius: 50%; }
 .ChakMap-token.is-dragging { cursor: grabbing; z-index: 10; filter: drop-shadow(0 0 10px #65e7d6); }
