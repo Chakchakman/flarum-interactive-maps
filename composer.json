@@ -1,0 +1,24 @@
+{
+  "name": "chakchakman/flarum-interactive-maps",
+  "description": "Interactive tabletop maps and controlled character tokens for Flarum",
+  "type": "flarum-extension",
+  "license": "MIT",
+  "require": {
+    "flarum/core": "^2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "ChakChakman\\InteractiveMaps\\": "src/"
+    }
+  },
+  "extra": {
+    "flarum-extension": {
+      "title": "Interactive Maps (DEV)",
+      "icon": {
+        "name": "fas fa-map-marked-alt",
+        "backgroundColor": "#36465d",
+        "color": "#ffffff"
+      }
+    }
+  }
+}
