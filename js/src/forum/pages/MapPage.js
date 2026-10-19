@@ -7,7 +7,9 @@ const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 export default class MapPage extends Page {
   oninit(vnode) {
     super.oninit(vnode);
-    this.mapId = String(vnode.attrs.id);
+    // Prefer route vnode attrs; Mithril route params provide a fallback.
+    const routeId = vnode.attrs.id ?? m.route.param('id');
+    this.mapId = String(routeId ?? '');
     this.map = null;
     this.canManage = false;
     this.loading = true;
@@ -29,7 +31,12 @@ export default class MapPage extends Page {
     this.imageDimensions = null;
     this.imageLoadFailed = false;
     this.removed = false;
-    this.refresh();
+    if (/^[1-9]\\d*$/.test(this.mapId)) {
+      this.refresh();
+    } else {
+      this.loading = false;
+      this.error = `Некорректный номер карты в адресе: ${this.mapId || '(пусто)'}`;
+    }
   }
 
   oncreate(vnode) {
@@ -64,6 +71,9 @@ export default class MapPage extends Page {
     const requestId = ++this.refreshRequestSeq;
     try {
       const result = await app.request({ method: 'GET', url: endpoint(`chak-maps/${this.mapId}`) });
+      if (!result || !result.data || !result.data.id) {
+        throw new Error(`API не вернул данные карты #${this.mapId}`);
+      }
       // A poll that began before a drag/save must never replace newer local
       // coordinates, even when the save has already completed.
       if (!this.removed && requestId === this.refreshRequestSeq
@@ -293,7 +303,12 @@ export default class MapPage extends Page {
 
   view() {
     if (this.loading) return <div className="container ChakMaps-page"><p>Загружаем карту…</p></div>;
-    if (!this.map) return <div className="container ChakMaps-page"><p className="ChakMaps-error">{this.error || 'Карта не найдена'}</p></div>;
+    if (!this.map) return (
+      <div className="container ChakMaps-page">
+        <p className="ChakMaps-error">{this.error || `Не удалось загрузить карту #${this.mapId}`}</p>
+        <p><Link href={app.route('chak.maps')}>← Вернуться к списку карт</Link></p>
+      </div>
+    );
 
     const map = this.map;
     const imageSize = this.imageDimensions;
