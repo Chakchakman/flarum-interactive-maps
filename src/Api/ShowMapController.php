@@ -14,7 +14,9 @@ class ShowMapController extends ApiController implements RequestHandlerInterface
     {
         \Flarum\Http\RequestUtil::getActor($request)->assertRegistered();
 
-        $map = Map::find($this->id($request));
+        $id = $this->id($request);
+        if ($id < 1) return $this->error('Неверный номер карты в API-запросе', 400);
+        $map = Map::find($id);
         if (!$map) return $this->error('Карта не найдена', 404);
         return new JsonResponse(['data' => $this->mapData($map, true), 'canManage' => $this->admin($request)]);
     }
