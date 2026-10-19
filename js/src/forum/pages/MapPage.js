@@ -13,7 +13,7 @@ export default class MapPage extends Page {
     this.loading = true;
     this.error = '';
     this.tokenName = '';
-    this.tokenImageUrl = 'http://localhost:8081/percy/silas.png';
+    this.tokenImageUrl = '';
     this.tokenOwner = '';
     this.adding = false;
     this.dragging = null;
