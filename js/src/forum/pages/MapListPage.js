@@ -93,7 +93,8 @@ export default class MapListPage extends Page {
               {this.maps.map((map) => (
                 <div className="ChakMaps-cardRow" key={map.id}>
                   <Link className="ChakMaps-card" href={app.route('chak.map', { id: map.id })}>
-                    <div className="ChakMaps-cardThumb" style={{ backgroundImage: `url("${map.backgroundUrl.replace(/"/g, '%22')}")` }} />
+                    <img className="ChakMaps-cardThumb" src={map.backgroundUrl}
+                      loading="lazy" decoding="async" alt="" />
                     <div>
                       <strong>{map.title}</strong>
                       <div className="ChakMaps-muted">Карта #{map.id} · сетка {map.gridSize}px</div>
