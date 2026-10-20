@@ -5,7 +5,6 @@ namespace ChakChakman\InteractiveMaps\Api;
 use ChakChakman\InteractiveMaps\Models\Map;
 use ChakChakman\InteractiveMaps\Models\Token;
 use Flarum\User\User;
-use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -37,6 +36,6 @@ class CreateTokenController extends ApiController implements RequestHandlerInter
         $token->y = 0.5;
         $token->owner_user_id = $owner ? $owner->id : null;
         $token->save();
-        return new JsonResponse(['data' => $this->tokenData($token)], 201);
+        return $this->document($this->tokenResource($token), 201);
     }
 }
