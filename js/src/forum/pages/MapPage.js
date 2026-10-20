@@ -2,8 +2,13 @@ import Page from 'flarum/common/components/Page';
 import Link from 'flarum/common/components/Link';
 import { endpoint, displayError } from '../api';
 import { LatestTokenMoveQueue } from '../tokenMoveQueue.mjs';
+import { DebouncedGridSaveQueue } from '../gridSaveQueue.mjs';
+import { FALLBACK_IMAGE, gridMetrics, snapToCellCenter, validImageSize } from '../gridGeometry.mjs';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const GRID_FIELDS = ['gridSize', 'gridOffsetX', 'gridOffsetY', 'gridEnabled', 'snapToGrid'];
+const gridSettings = (map) => Object.fromEntries(GRID_FIELDS.map((key) => [key, map[key]]));
+let nextPatternId = 0;
 
 export default class MapPage extends Page {
   oninit(vnode) {
@@ -22,7 +27,47 @@ export default class MapPage extends Page {
     this.removed = false;
     this.localRevision = 0;
     this.refreshInFlight = false;
-    this.gridSaving = 0;
+    this.gridPatternId = `chak-map-grid-${++nextPatternId}`;
+    this.imageUrl = null;
+    this.imageDimensions = FALLBACK_IMAGE;
+    this.imageStatus = 'loading';
+    this.gridConfirmed = null;
+    this.gridUpdates = new DebouncedGridSaveQueue(
+      async (changes) => {
+        const response = await app.request({
+          method: 'PATCH',
+          url: endpoint(`chak-maps/${this.mapId}`),
+          body: changes,
+        });
+        if (!response?.data) throw new Error('Пустой ответ при сохранении сетки');
+        return response.data;
+      },
+      {
+        delay: 400,
+        onSuccess: (saved) => {
+          this.gridConfirmed = gridSettings(saved);
+          if (this.removed) return;
+          if (this.error.startsWith('Не удалось сохранить сетку:')) this.error = '';
+          m.redraw();
+        },
+        onFailure: (error, batch, pending) => {
+          if (this.removed) return;
+          for (const key of Object.keys(batch)) {
+            // If there is already a newer queued value for this slider,
+            // do not replace it with a stale server-confirmed value.
+            if (!Object.prototype.hasOwnProperty.call(pending, key)
+                && this.gridConfirmed && this.map) {
+              this.map[key] = this.gridConfirmed[key];
+            }
+          }
+          this.error = `Не удалось сохранить сетку: ${displayError(error)}`;
+          m.redraw();
+        },
+        onDrained: () => {
+          if (!this.removed) m.redraw();
+        },
+      }
+    );
     this.moves = new LatestTokenMoveQueue(
       async (id, position) => {
         const response = await app.request({
@@ -70,6 +115,8 @@ export default class MapPage extends Page {
   }
 
   onremove(vnode) {
+    // Commit an unsent slider value when navigating away from the editor.
+    void this.gridUpdates.flushNow();
     this.removed = true;
     window.removeEventListener('pointermove', this.moveListener);
     window.removeEventListener('pointerup', this.endListener);
@@ -78,7 +125,7 @@ export default class MapPage extends Page {
   }
 
   hasPendingLocalChanges() {
-    return !!this.dragging || this.moves.hasPending() || this.gridSaving > 0;
+    return !!this.dragging || this.moves.hasPending() || this.gridUpdates.hasPending();
   }
 
   async refresh(silent = false) {
@@ -99,7 +146,9 @@ export default class MapPage extends Page {
       if (!this.removed && !this.hasPendingLocalChanges()
           && revision === this.localRevision) {
         this.map = result.data;
+        this.gridConfirmed = gridSettings(result.data);
         this.canManage = !!result.canManage;
+        this.loadBackgroundDimensions(this.map.backgroundUrl);
         app.setTitle(this.map.title);
         if (!silent) this.error = '';
       }
@@ -112,6 +161,31 @@ export default class MapPage extends Page {
       this.loading = false;
       if (!this.removed) m.redraw();
     }
+  }
+
+  loadBackgroundDimensions(url) {
+    if (this.imageUrl === url || !url) return;
+    this.imageUrl = url;
+    this.imageStatus = 'loading';
+    this.imageDimensions = FALLBACK_IMAGE;
+
+    const image = new Image();
+    image.onload = () => {
+      if (this.removed || this.imageUrl !== url) return;
+      if (validImageSize(image.naturalWidth, image.naturalHeight)) {
+        this.imageDimensions = { width: image.naturalWidth, height: image.naturalHeight };
+        this.imageStatus = 'ready';
+      } else {
+        this.imageStatus = 'error';
+      }
+      m.redraw();
+    };
+    image.onerror = () => {
+      if (this.removed || this.imageUrl !== url) return;
+      this.imageStatus = 'error';
+      m.redraw();
+    };
+    image.src = url;
   }
 
   isMine(token) {
@@ -145,15 +219,12 @@ export default class MapPage extends Page {
     const { token, element, origX, origY } = this.dragging;
     this.dragging = null;
     element.classList.remove('is-dragging');
-    if (this.map.snapToGrid && this.map.gridEnabled) {
-      // Grid units are measured against the original 1280 x 853 map,
-      // not against the browser window, so resizing preserves cell positions.
-      const snap = (n, referenceSize, offset) => clamp(
-        (Math.floor((n * referenceSize - offset) / this.map.gridSize) + 0.5) * this.map.gridSize / referenceSize + offset / referenceSize,
-        0, 1
+    if (this.map.snapToGrid && this.map.gridEnabled && this.imageStatus === 'ready') {
+      const metrics = gridMetrics(
+        this.map.gridSize, this.map.gridOffsetX, this.map.gridOffsetY, this.imageDimensions
       );
-      token.x = snap(token.x, 1280, this.map.gridOffsetX);
-      token.y = snap(token.y, 853, this.map.gridOffsetY);
+      token.x = snapToCellCenter(token.x, metrics.width, metrics.cell, metrics.offsetX);
+      token.y = snapToCellCenter(token.y, metrics.height, metrics.cell, metrics.offsetY);
     }
     element.style.left = `${token.x * 100}%`;
     element.style.top = `${token.y * 100}%`;
@@ -166,28 +237,12 @@ export default class MapPage extends Page {
     m.redraw();
   }
 
-  async saveGrid(changes) {
-    if (!this.canManage) return;
-    const previous = { ...this.map };
+  saveGrid(changes) {
+    if (!this.canManage || !this.map) return;
     this.localRevision += 1;
-    this.gridSaving += 1;
     Object.assign(this.map, changes);
+    this.gridUpdates.queue(changes);
     m.redraw();
-    try {
-      const result = await app.request({
-        method: 'PATCH', url: endpoint(`chak-maps/${this.mapId}`), body: changes,
-      });
-      // Keep the live token collection: grid PATCH responses can contain
-      // outdated token positions from the time of the request.
-      this.map = { ...result.data, tokens: this.map.tokens };
-      this.error = '';
-    } catch (error) {
-      this.map = { ...previous, tokens: this.map.tokens };
-      this.error = displayError(error);
-    } finally {
-      this.gridSaving -= 1;
-      m.redraw();
-    }
   }
 
   async addToken(event) {
@@ -233,18 +288,34 @@ export default class MapPage extends Page {
     </div>;
 
     const map = this.map;
+    const metrics = gridMetrics(
+      map.gridSize, map.gridOffsetX, map.gridOffsetY, this.imageDimensions
+    );
     return (
       <div className="container ChakMaps-page ChakMap-page">
         <div className="ChakMaps-top"><Link href={app.route('chak.maps')}>← Все карты</Link><h1>{map.title}</h1><button className="Button" onclick={() => this.refresh()}>Обновить позиции</button></div>
         {this.error && <p className="ChakMaps-error">{this.error}</p>}
         <div className="ChakMap-layout">
           <div className="ChakMap-stage">
-            <div className="ChakMap-canvas" style={{ backgroundImage: `url("${map.backgroundUrl.replace(/"/g, '%22')}")` }}>
+            <div className="ChakMap-canvas" style={{
+              backgroundImage: `url("${map.backgroundUrl.replace(/"/g, '%22')}")`,
+              aspectRatio: metrics.aspectRatio,
+            }}>
               {map.gridEnabled && (
-                <div className="ChakMap-grid" style={{
-                  backgroundSize: `${map.gridSize * 100 / 1280}% ${map.gridSize * 100 / 853}%`,
-                  backgroundPosition: `${map.gridOffsetX * 100 / 1280}% ${map.gridOffsetY * 100 / 853}%`,
-                }} />
+                <svg className="ChakMap-grid" aria-hidden="true"
+                  viewBox={`0 0 ${metrics.width} ${metrics.height}`}
+                  preserveAspectRatio="none">
+                  <defs>
+                    <pattern id={this.gridPatternId} patternUnits="userSpaceOnUse"
+                      x={metrics.offsetX} y={metrics.offsetY}
+                      width={metrics.cell} height={metrics.cell}>
+                      <path d={`M 0 0 L ${metrics.cell} 0 M 0 0 L 0 ${metrics.cell}`}
+                        fill="none" stroke="rgba(255,255,255,.48)" strokeWidth="1" />
+                    </pattern>
+                  </defs>
+                  <rect x="0" y="0" width={metrics.width} height={metrics.height}
+                    fill={`url(#${this.gridPatternId})`} />
+                </svg>
               )}
               {map.tokens.map((token) => (
                 <img
@@ -277,12 +348,14 @@ export default class MapPage extends Page {
               <>
                 <section className="ChakMaps-panel">
                   <h3>Настройки сетки</h3>
-                  <label>Размер клетки: {map.gridSize} условных px</label>
-                  <input type="range" min="12" max="256" step="1" value={map.gridSize} onchange={(e) => this.saveGrid({ gridSize: Number(e.target.value) })} />
+                  <p className="ChakMaps-muted">Сетка рассчитана в пикселях исходного изображения ({metrics.width} × {metrics.height}). Изменения отправляются через 400 мс после настройки.</p>
+                  {this.imageStatus === 'error' && <p className="ChakMaps-error">Не удалось определить размеры фона. Проверь URL изображения: привязка к сетке временно отключена.</p>}
+                  <label>Размер клетки: {map.gridSize} px</label>
+                  <input type="range" min="12" max="256" step="1" value={map.gridSize} oninput={(e) => this.saveGrid({ gridSize: Number(e.target.value) })} />
                   <label>Сдвиг по X: {map.gridOffsetX}px</label>
-                  <input type="range" min="-100" max="100" value={map.gridOffsetX} onchange={(e) => this.saveGrid({ gridOffsetX: Number(e.target.value) })} />
+                  <input type="range" min="-256" max="256" step="1" value={map.gridOffsetX} oninput={(e) => this.saveGrid({ gridOffsetX: Number(e.target.value) })} />
                   <label>Сдвиг по Y: {map.gridOffsetY}px</label>
-                  <input type="range" min="-100" max="100" value={map.gridOffsetY} onchange={(e) => this.saveGrid({ gridOffsetY: Number(e.target.value) })} />
+                  <input type="range" min="-256" max="256" step="1" value={map.gridOffsetY} oninput={(e) => this.saveGrid({ gridOffsetY: Number(e.target.value) })} />
                   <label><input type="checkbox" checked={map.gridEnabled} onchange={(e) => this.saveGrid({ gridEnabled: e.target.checked })} /> Показывать сетку</label>
                   <label><input type="checkbox" checked={map.snapToGrid} onchange={(e) => this.saveGrid({ snapToGrid: e.target.checked })} /> Привязывать фишки</label>
                 </section>
