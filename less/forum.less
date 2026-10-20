@@ -4,6 +4,9 @@
 .ChakMaps-heading p { color: #788390; }
 .ChakMaps-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 330px); gap: 20px; align-items: start; }
 .ChakMaps-list { display: grid; gap: 12px; }
+.ChakMaps-cardRow { display: flex; align-items: stretch; gap: 10px; min-width: 0; }
+.ChakMaps-cardRow > .ChakMaps-card { flex: 1; min-width: 0; }
+.ChakMaps-deleteButton { flex-shrink: 0; align-self: center; }
 .ChakMaps-card { display: grid; grid-template-columns: 136px 1fr; gap: 15px; align-items: center; padding: 10px; border-radius: 12px; background: var(--control-bg, #f0f1f3); color: inherit; }
 .ChakMaps-card:hover { color: inherit; text-decoration: none; filter: brightness(.96); }
 .ChakMaps-cardThumb { height: 88px; background-size: cover; background-position: center; border-radius: 8px; background-color: #26394d; }
