@@ -1,6 +1,7 @@
 import Page from 'flarum/common/components/Page';
 import Link from 'flarum/common/components/Link';
 import { endpoint, displayError } from '../api';
+import { canManageResponse, normalizeMap, normalizeMapList, resourceBody } from '../apiResponse.mjs';
 
 export default class MapListPage extends Page {
   oninit(vnode) {
@@ -24,8 +25,8 @@ export default class MapListPage extends Page {
   async load() {
     try {
       const result = await app.request({ method: 'GET', url: endpoint('chak-maps') });
-      this.maps = result.data || [];
-      this.canManage = !!result.canManage;
+      this.maps = normalizeMapList(result);
+      this.canManage = canManageResponse(result);
     } catch (error) {
       this.error = displayError(error);
     } finally {
@@ -43,9 +44,12 @@ export default class MapListPage extends Page {
       const result = await app.request({
         method: 'POST',
         url: endpoint('chak-maps'),
-        body: { title: this.title.trim(), backgroundUrl: this.backgroundUrl.trim() },
+        body: resourceBody('chak-maps', {
+          title: this.title.trim(),
+          backgroundUrl: this.backgroundUrl.trim(),
+        }),
       });
-      m.route.set(app.route('chak.map', { id: result.data.id }));
+      m.route.set(app.route('chak.map', { id: normalizeMap(result.data).id }));
     } catch (error) {
       this.error = displayError(error);
     } finally {
