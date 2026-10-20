@@ -12,6 +12,7 @@ export default class MapListPage extends Page {
     this.backgroundUrl = '';
     this.error = '';
     this.creating = false;
+    this.deletingIds = new Set();
     this.load();
   }
 
@@ -53,6 +54,30 @@ export default class MapListPage extends Page {
     }
   }
 
+  async deleteMap(map) {
+    if (!this.canManage || this.deletingIds.has(map.id)) return;
+    const confirmed = window.confirm(
+      `Удалить карту «${map.title}» (#${map.id}) вместе со ВСЕМИ фишками?\n\nЭто действие необратимо.`
+    );
+    if (!confirmed) return;
+
+    this.deletingIds.add(map.id);
+    this.error = '';
+    m.redraw();
+    try {
+      await app.request({
+        method: 'DELETE',
+        url: endpoint(`chak-maps/${map.id}`),
+      });
+      this.maps = this.maps.filter((entry) => entry.id !== map.id);
+    } catch (error) {
+      this.error = `Не удалось удалить карту #${map.id}: ${displayError(error)}`;
+    } finally {
+      this.deletingIds.delete(map.id);
+      m.redraw();
+    }
+  }
+
   view() {
     return (
       <div className="container ChakMaps-page">
@@ -66,13 +91,23 @@ export default class MapListPage extends Page {
             <div className="ChakMaps-list">
               {!this.maps.length && <div className="ChakMaps-empty">Пока нет ни одной карты. Создай первую справа.</div>}
               {this.maps.map((map) => (
-                <Link className="ChakMaps-card" href={app.route('chak.map', { id: map.id })}>
-                  <div className="ChakMaps-cardThumb" style={{ backgroundImage: `url("${map.backgroundUrl.replace(/"/g, '%22')}")` }} />
-                  <div>
-                    <strong>{map.title}</strong>
-                    <div className="ChakMaps-muted">Карта #{map.id} · сетка {map.gridSize}px</div>
-                  </div>
-                </Link>
+                <div className="ChakMaps-cardRow" key={map.id}>
+                  <Link className="ChakMaps-card" href={app.route('chak.map', { id: map.id })}>
+                    <div className="ChakMaps-cardThumb" style={{ backgroundImage: `url("${map.backgroundUrl.replace(/"/g, '%22')}")` }} />
+                    <div>
+                      <strong>{map.title}</strong>
+                      <div className="ChakMaps-muted">Карта #{map.id} · сетка {map.gridSize}px</div>
+                    </div>
+                  </Link>
+                  {this.canManage && (
+                    <button type="button" className="Button Button--danger ChakMaps-deleteButton"
+                      disabled={this.deletingIds.has(map.id)}
+                      title={`Удалить карту #${map.id} и все её фишки`}
+                      onclick={() => this.deleteMap(map)}>
+                      {this.deletingIds.has(map.id) ? 'Удаление…' : 'Удалить'}
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
             {this.canManage && (
