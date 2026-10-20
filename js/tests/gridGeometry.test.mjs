@@ -32,7 +32,7 @@ test('snap keeps the center of the exact SVG cell with positive/negative offset'
   approx(snapToCellCenter(0.05, 1000, 100, 0), 0.05);
   approx(snapToCellCenter(0.101, 1000, 100, 0), 0.15);
   approx(snapToCellCenter(0.299, 1000, 100, 10), 0.26);
-  approx(snapToCellCenter(0.299, 1000, 100, -10), 0.24);
+  approx(snapToCellCenter(0.299, 1000, 100, -10), 0.34);
 });
 
 test('snap is independent of browser render width and supports portrait images', () => {
