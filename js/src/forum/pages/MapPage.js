@@ -1,6 +1,12 @@
 import Page from 'flarum/common/components/Page';
 import Link from 'flarum/common/components/Link';
 import { endpoint, displayError } from '../api';
+import {
+  normalizeMapResponse,
+  normalizeToken,
+  canManageResponse,
+  resourceBody,
+} from '../apiResponse.mjs';
 import { LatestTokenMoveQueue } from '../tokenMoveQueue.mjs';
 import { DebouncedGridSaveQueue } from '../gridSaveQueue.mjs';
 import { FALLBACK_IMAGE, gridMetrics, snapToCellCenter, validImageSize } from '../gridGeometry.mjs';
@@ -38,10 +44,10 @@ export default class MapPage extends Page {
         const response = await app.request({
           method: 'PATCH',
           url: endpoint(`chak-maps/${this.mapId}`),
-          body: changes,
+          body: resourceBody('chak-maps', changes),
         });
         if (!response?.data) throw new Error('Пустой ответ при сохранении сетки');
-        return response.data;
+        return normalizeMapResponse(response);
       },
       {
         delay: 400,
@@ -74,9 +80,9 @@ export default class MapPage extends Page {
         const response = await app.request({
           method: 'POST',
           url: endpoint(`chak-tokens/${id}/move`),
-          body: position,
+          body: resourceBody('chak-tokens', position),
         });
-        return response.data;
+        return normalizeToken(response.data);
       },
       {
         onSuccess: () => {
@@ -148,18 +154,19 @@ export default class MapPage extends Page {
 
     try {
       const result = await app.request({ method: 'GET', url: endpoint(`chak-maps/${this.mapId}`) });
-      if (!result?.data || !Array.isArray(result.data.tokens)) {
+      const loaded = normalizeMapResponse(result);
+      if (!Array.isArray(loaded.tokens)) {
         throw new Error(`Некорректный ответ API для карты #${this.mapId}`);
       }
       // A GET started before a drag or grid edit must never overwrite those
       // edits, even if the write finished while this GET was pending.
       if (!this.removed && !this.hasPendingLocalChanges()
           && revision === this.localRevision) {
-        const snapshot = JSON.stringify([!!result.canManage, result.data]);
+        const snapshot = JSON.stringify([canManageResponse(result), loaded]);
         if (!silent || this.map === null || snapshot !== this.lastRemoteSnapshot) {
-          this.map = result.data;
-          this.gridConfirmed = gridSettings(result.data);
-          this.canManage = !!result.canManage;
+          this.map = loaded;
+          this.gridConfirmed = gridSettings(loaded);
+          this.canManage = canManageResponse(result);
           this.loadBackgroundDimensions(this.map.backgroundUrl);
           app.setTitle(this.map.title);
           this.lastRemoteSnapshot = snapshot;
@@ -268,7 +275,11 @@ export default class MapPage extends Page {
     try {
       await app.request({
         method: 'POST', url: endpoint(`chak-maps/${this.mapId}/tokens`),
-        body: { name: this.tokenName.trim(), imageUrl: this.tokenImageUrl.trim(), ownerUsername: this.tokenOwner.trim() },
+        body: resourceBody('chak-tokens', {
+          name: this.tokenName.trim(),
+          imageUrl: this.tokenImageUrl.trim(),
+          ownerUsername: this.tokenOwner.trim(),
+        }),
       });
       this.tokenName = '';
       this.error = '';
@@ -286,7 +297,8 @@ export default class MapPage extends Page {
     if (name === null) return;
     try {
       await app.request({
-        method: 'PATCH', url: endpoint(`chak-tokens/${token.id}/owner`), body: { ownerUsername: name.trim() },
+        method: 'PATCH', url: endpoint(`chak-tokens/${token.id}/owner`),
+        body: resourceBody('chak-tokens', { ownerUsername: name.trim() }),
       });
       this.error = '';
       await this.refresh();
