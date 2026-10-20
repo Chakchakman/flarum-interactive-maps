@@ -3,7 +3,6 @@
 namespace ChakChakman\InteractiveMaps\Api;
 
 use ChakChakman\InteractiveMaps\Models\Map;
-use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -45,6 +44,6 @@ class UpdateMapController extends ApiController implements RequestHandlerInterfa
             }
         }
         $map->save();
-        return new JsonResponse(['data' => $this->mapData($map, true)]);
+        return $this->mapDocument($map, true);
     }
 }
