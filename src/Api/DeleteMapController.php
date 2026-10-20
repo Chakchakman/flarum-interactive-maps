@@ -3,7 +3,6 @@
 namespace ChakChakman\InteractiveMaps\Api;
 
 use ChakChakman\InteractiveMaps\Models\Map;
-use Illuminate\Support\Facades\DB;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -23,7 +22,10 @@ class DeleteMapController extends ApiController implements RequestHandlerInterfa
             return $this->error('Некорректный идентификатор карты', 400);
         }
 
-        $deleted = DB::transaction(function () use ($id): bool {
+        // Flarum's Eloquent models already know their database connection.
+        // Do not rely on Laravel's DB facade having an application root.
+        $connection = (new Map())->getConnection();
+        $deleted = $connection->transaction(function () use ($id): bool {
             $map = Map::query()->whereKey($id)->lockForUpdate()->first();
             if (!$map) {
                 return false;
