@@ -38,7 +38,7 @@ test('empty token relationship returns empty list', () => {
 
 test('list normalizes typed resources and moves canManage to meta', () => {
   const response = {
-    data: [map, { type: 'chak-maps', id: '8', attributes: { title: 'Вторая карта' } }],
+    data: [{ type: map.type, id: map.id, attributes: map.attributes }, { type: 'chak-maps', id: '8', attributes: { title: 'Вторая карта' } }],
     meta: { canManage: true },
   };
   assert.equal(normalizeMapList(response)[0].id, 7);
