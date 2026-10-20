@@ -3,7 +3,6 @@
 namespace ChakChakman\InteractiveMaps\Api;
 
 use ChakChakman\InteractiveMaps\Models\Map;
-use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -29,6 +28,6 @@ class CreateMapController extends ApiController implements RequestHandlerInterfa
         $map->grid_offset_x = 0;
         $map->grid_offset_y = 0;
         $map->save();
-        return new JsonResponse(['data' => $this->mapData($map)], 201);
+        return $this->document($this->mapResource($map), 201);
     }
 }
