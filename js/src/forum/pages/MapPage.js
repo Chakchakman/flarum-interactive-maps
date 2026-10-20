@@ -27,6 +27,7 @@ export default class MapPage extends Page {
     this.removed = false;
     this.localRevision = 0;
     this.refreshInFlight = false;
+    this.lastRemoteSnapshot = null;
     this.gridPatternId = `chak-map-grid-${++nextPatternId}`;
     this.imageUrl = null;
     this.imageDimensions = FALLBACK_IMAGE;
@@ -109,8 +110,15 @@ export default class MapPage extends Page {
     window.addEventListener('pointermove', this.moveListener);
     window.addEventListener('pointerup', this.endListener);
     window.addEventListener('pointercancel', this.endListener);
+    // Inactive browser tabs must not continuously query the entire map.
+    // Upon returning to this tab, fetch once immediately so remote changes
+    // are shown without waiting for the next polling tick.
+    this.visibilityListener = () => {
+      if (!document.hidden) void this.refresh(true);
+    };
+    document.addEventListener('visibilitychange', this.visibilityListener);
     this.refreshTimer = window.setInterval(() => {
-      if (!this.dragging) this.refresh(true);
+      if (!document.hidden && !this.dragging) void this.refresh(true);
     }, 5000);
   }
 
@@ -122,6 +130,7 @@ export default class MapPage extends Page {
     window.removeEventListener('pointerup', this.endListener);
     window.removeEventListener('pointercancel', this.endListener);
     window.clearInterval(this.refreshTimer);
+    document.removeEventListener('visibilitychange', this.visibilityListener);
   }
 
   hasPendingLocalChanges() {
@@ -135,6 +144,7 @@ export default class MapPage extends Page {
     if (this.removed || this.refreshInFlight || this.hasPendingLocalChanges()) return;
     this.refreshInFlight = true;
     const revision = this.localRevision;
+    let redrawNeeded = !silent;
 
     try {
       const result = await app.request({ method: 'GET', url: endpoint(`chak-maps/${this.mapId}`) });
@@ -145,11 +155,16 @@ export default class MapPage extends Page {
       // edits, even if the write finished while this GET was pending.
       if (!this.removed && !this.hasPendingLocalChanges()
           && revision === this.localRevision) {
-        this.map = result.data;
-        this.gridConfirmed = gridSettings(result.data);
-        this.canManage = !!result.canManage;
-        this.loadBackgroundDimensions(this.map.backgroundUrl);
-        app.setTitle(this.map.title);
+        const snapshot = JSON.stringify([!!result.canManage, result.data]);
+        if (!silent || this.map === null || snapshot !== this.lastRemoteSnapshot) {
+          this.map = result.data;
+          this.gridConfirmed = gridSettings(result.data);
+          this.canManage = !!result.canManage;
+          this.loadBackgroundDimensions(this.map.backgroundUrl);
+          app.setTitle(this.map.title);
+          this.lastRemoteSnapshot = snapshot;
+          redrawNeeded = true;
+        }
         if (!silent) this.error = '';
       }
     } catch (error) {
@@ -158,8 +173,9 @@ export default class MapPage extends Page {
       }
     } finally {
       this.refreshInFlight = false;
+      const wasLoading = this.loading;
       this.loading = false;
-      if (!this.removed) m.redraw();
+      if (!this.removed && (redrawNeeded || wasLoading)) m.redraw();
     }
   }
 
