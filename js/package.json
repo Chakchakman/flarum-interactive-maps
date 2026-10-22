@@ -6,7 +6,8 @@
     "dev": "webpack --mode development --watch",
     "build": "webpack --mode production",
     "test:token-sync": "node --test tests/tokenMoveQueue.test.mjs",
-    "test:grid": "node --test tests/gridGeometry.test.mjs tests/gridSaveQueue.test.mjs"
+    "test:grid": "node --test tests/gridGeometry.test.mjs tests/gridSaveQueue.test.mjs",
+    "test:api": "node --test tests/apiResponse.test.mjs"
   },
   "devDependencies": {
     "flarum-webpack-config": "^3.0.0",

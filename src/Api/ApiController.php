@@ -5,7 +5,7 @@ namespace ChakChakman\InteractiveMaps\Api;
 use Flarum\User\User;
 use ChakChakman\InteractiveMaps\Models\Map;
 use ChakChakman\InteractiveMaps\Models\Token;
-use Laminas\Diactoros\Response\JsonResponse;
+use Flarum\Api\JsonApiResponse;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 abstract class ApiController
@@ -13,11 +13,18 @@ abstract class ApiController
     protected function data(Request $request): array
     {
         $body = $request->getParsedBody();
-        if (is_array($body) && count($body)) {
-            return $body;
+        if (!is_array($body)) {
+            $body = json_decode((string) $request->getBody(), true);
         }
-        $parsed = json_decode((string) $request->getBody(), true);
-        return is_array($parsed) ? $parsed : [];
+        if (!is_array($body)) return [];
+
+        // Accept JSON:API attribute envelopes and legacy flat request bodies.
+        // The legacy form is retained for existing integrations and browser tests.
+        if (isset($body['data']['attributes']) && is_array($body['data']['attributes'])) {
+            return $body['data']['attributes'];
+        }
+
+        return $body;
     }
 
     protected function admin(Request $request): bool
@@ -26,9 +33,64 @@ abstract class ApiController
         return $actor instanceof User && $actor->isAdmin();
     }
 
-    protected function error(string $message, int $status = 400): JsonResponse
+    protected function error(string $message, int $status = 400): JsonApiResponse
     {
-        return new JsonResponse(['error' => $message], $status);
+        return new JsonApiResponse([
+            'errors' => [[
+                'status' => (string) $status,
+                'title' => $status === 403 ? 'Forbidden' : ($status === 404 ? 'Not Found' : 'Invalid Request'),
+                'detail' => $message,
+            ]],
+        ], $status);
+    }
+
+    protected function document(array $data, int $status = 200, array $meta = []): JsonApiResponse
+    {
+        $document = ['data' => $data];
+        if ($meta) $document['meta'] = $meta;
+        return new JsonApiResponse($document, $status);
+    }
+
+    protected function mapDocument(Map $map, bool $withTokens = false, array $meta = []): JsonApiResponse
+    {
+        $document = ['data' => $this->mapResource($map)];
+        if ($withTokens) {
+            $tokens = $map->tokens()->with('owner')->orderBy('id')->get();
+            $included = $tokens->map(fn (Token $token) => $this->tokenResource($token))->all();
+            $document['data']['relationships'] = [
+                'tokens' => [
+                    'data' => array_map(
+                        fn (array $token) => ['type' => $token['type'], 'id' => $token['id']],
+                        $included
+                    ),
+                ],
+            ];
+            $document['included'] = $included;
+        }
+        if ($meta) $document['meta'] = $meta;
+        return new JsonApiResponse($document);
+    }
+
+    protected function mapResource(Map $map): array
+    {
+        $attributes = $this->mapData($map);
+        unset($attributes['id']);
+        return [
+            'type' => 'chak-maps',
+            'id' => (string) $map->id,
+            'attributes' => $attributes,
+        ];
+    }
+
+    protected function tokenResource(Token $token): array
+    {
+        $attributes = $this->tokenData($token);
+        unset($attributes['id']);
+        return [
+            'type' => 'chak-tokens',
+            'id' => (string) $token->id,
+            'attributes' => $attributes,
+        ];
     }
 
     protected function id(Request $request): int

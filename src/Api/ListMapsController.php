@@ -3,7 +3,6 @@
 namespace ChakChakman\InteractiveMaps\Api;
 
 use ChakChakman\InteractiveMaps\Models\Map;
-use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -15,7 +14,7 @@ class ListMapsController extends ApiController implements RequestHandlerInterfac
         \Flarum\Http\RequestUtil::getActor($request)->assertRegistered();
 
         $maps = Map::query()->orderByDesc('id')->limit(100)->get()
-            ->map(fn (Map $map) => $this->mapData($map))->all();
-        return new JsonResponse(['data' => $maps, 'canManage' => $this->admin($request)]);
+            ->map(fn (Map $map) => $this->mapResource($map))->all();
+        return $this->document($maps, 200, ['canManage' => $this->admin($request)]);
     }
 }

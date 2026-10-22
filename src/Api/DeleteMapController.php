@@ -3,7 +3,7 @@
 namespace ChakChakman\InteractiveMaps\Api;
 
 use ChakChakman\InteractiveMaps\Models\Map;
-use Laminas\Diactoros\Response\JsonResponse;
+use Flarum\Api\JsonApiResponse;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -43,6 +43,7 @@ class DeleteMapController extends ApiController implements RequestHandlerInterfa
             return $this->error('Карта не найдена', 404);
         }
 
-        return new JsonResponse(['success' => true, 'id' => $id]);
+        // JSON:API permits a meta-only successful document.
+        return new JsonApiResponse(['meta' => ['deletedId' => (string) $id]]);
     }
 }

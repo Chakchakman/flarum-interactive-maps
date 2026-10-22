@@ -40,4 +40,5 @@ jobs:
       - run: npm ci
       - run: npm run test:token-sync
       - run: npm run test:grid
+      - run: npm run test:api
       - run: npm run build
