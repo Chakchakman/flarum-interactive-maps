@@ -3,7 +3,6 @@
 namespace ChakChakman\InteractiveMaps\Api;
 
 use ChakChakman\InteractiveMaps\Models\Token;
-use Flarum\User\User;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -14,10 +13,12 @@ class MoveTokenController extends ApiController implements RequestHandlerInterfa
     {
         $token = Token::find($this->id($request));
         if (!$token) return $this->error('Фишка не найдена', 404);
-        $actor = \Flarum\Http\RequestUtil::getActor($request);
-        if (!($actor instanceof User) || $actor->isGuest()) return $this->error('Нужна авторизация', 403);
-        if (!$actor->isAdmin() && (int) $token->owner_user_id !== (int) $actor->id) {
-            return $this->error('Вы можете перемещать только свою фишку', 403);
+        // The old map-ID endpoint is now staff-only. Player movement must
+        // eventually use a post-scoped endpoint that proves map visibility.
+        // Do not grant access here merely because a player owns the token:
+        // that would bypass hidden/private forum discussions.
+        if (!$this->manage($request)) {
+            return $this->error('Перемещение из каталога доступно только мастерам', 403);
         }
         $data = $this->data($request);
         if (!isset($data['x'], $data['y']) || !is_numeric($data['x']) || !is_numeric($data['y'])) {
