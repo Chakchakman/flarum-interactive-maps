@@ -11,7 +11,7 @@ class CreateMapController extends ApiController implements RequestHandlerInterfa
 {
     public function handle(Request $request): Response
     {
-        if (!$this->manage($request)) return $this->error('Только администратор создаёт карты в v0.1', 403);
+        if (!$this->manage($request)) return $this->error('Создавать карты могут только назначенные мастера', 403);
         $data = $this->data($request);
         $title = trim((string) ($data['title'] ?? ''));
         $url = $data['backgroundUrl'] ?? '';
