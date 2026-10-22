@@ -368,7 +368,7 @@ export default class MapPage extends Page {
                 />
               ))}
             </div>
-            <p className="ChakMaps-muted">Перетаскивай собственную фишку мышью. Администратор может двигать все фишки. Координаты сохраняются в базе Flarum.</p>
+            <p className="ChakMaps-muted">Редактор для мастеров: можно перемещать фишки и назначать их владельцев. Перемещение игроками прямо в игровых сообщениях появится на следующем этапе v0.2.</p>
           </div>
           <div className="ChakMap-sidebar">
             <section className="ChakMaps-panel">
