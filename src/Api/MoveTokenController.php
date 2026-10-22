@@ -11,8 +11,6 @@ class MoveTokenController extends ApiController implements RequestHandlerInterfa
 {
     public function handle(Request $request): Response
     {
-        $token = Token::find($this->id($request));
-        if (!$token) return $this->error('Фишка не найдена', 404);
         // The old map-ID endpoint is now staff-only. Player movement must
         // eventually use a post-scoped endpoint that proves map visibility.
         // Do not grant access here merely because a player owns the token:
@@ -20,6 +18,10 @@ class MoveTokenController extends ApiController implements RequestHandlerInterfa
         if (!$this->manage($request)) {
             return $this->error('Перемещение из каталога доступно только мастерам', 403);
         }
+        // Check permissions before looking up token IDs so ordinary users
+        // cannot enumerate which token identifiers exist.
+        $token = Token::find($this->id($request));
+        if (!$token) return $this->error('Фишка не найдена', 404);
         $data = $this->data($request);
         if (!isset($data['x'], $data['y']) || !is_numeric($data['x']) || !is_numeric($data['y'])) {
             return $this->error('Нужны координаты x и y');
