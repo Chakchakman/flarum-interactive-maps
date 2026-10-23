@@ -37,6 +37,8 @@ return [
         ->fields(fn () => [
             Schema\Boolean::make('canManageChakMaps')
                 ->get(fn ($forum, Context $context) => MapPermissions::canManage($context->getActor())),
+            Schema\Boolean::make('canEmbedChakMaps')
+                ->get(fn ($forum, Context $context) => MapPermissions::canManage($context->getActor()) && MapPermissions::canEmbed($context->getActor())),
         ]),
 
     // A lightweight per-post hint. Only posts already serialized by Flarum

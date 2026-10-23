@@ -8,7 +8,7 @@
     "test:token-sync": "node --test tests/tokenMoveQueue.test.mjs",
     "test:grid": "node --test tests/gridGeometry.test.mjs tests/gridSaveQueue.test.mjs tests/mapViewport.test.mjs",
     "test:api": "node --test tests/apiResponse.test.mjs",
-    "test:inline": "node --test tests/inlineMapVisibility.test.mjs tests/inlineTokenPermission.test.mjs"
+    "test:inline": "node --test tests/inlineMapVisibility.test.mjs tests/inlineTokenPermission.test.mjs tests/mapEmbedCode.test.mjs"
   },
   "devDependencies": {
     "flarum-webpack-config": "^3.0.0",
