@@ -7,42 +7,16 @@ import { shouldRenderInlineMap } from './inlineMapVisibility.mjs';
 import PostControls from 'flarum/forum/utils/PostControls';
 import Button from 'flarum/common/components/Button';
 import { endpoint, displayError } from './api';
-import { resourceBody } from './apiResponse.mjs';
-import { parseMapEmbedCode } from './mapEmbedCode.mjs';
+import AttachMapModal from './components/AttachMapModal';
 
 export { default as extend } from './extend';
 
 // Link maps to saved posts through the hardened post-scoped API.
 const pendingMapPosts = new Set();
 
-async function attachMapFromPost(post) {
-  const postId = post.id();
-  if (!postId || pendingMapPosts.has(postId)) return;
-  const input = window.prompt(
-    'Вставь код из кнопки «Экспорт» в редакторе карты (например, [interactive-map id=9]):'
-  );
-  if (input === null) return;
-  const mapId = parseMapEmbedCode(input);
-  if (mapId === null) {
-    window.alert('Некорректный код карты. Используй [interactive-map id=9] или номер карты.');
-    return;
-  }
-  pendingMapPosts.add(postId);
-  try {
-    await app.request({
-      method: 'POST',
-      url: endpoint('chak-map-embeds'),
-      body: resourceBody('chak-map-embeds', { postId: Number(postId), mapId }),
-    });
-    // This is an in-memory UI hint only. The backend validates post visibility,
-    // both manager/embed permissions and post edit permission independently.
-    post.pushAttributes({ hasChakMap: true });
-    m.redraw();
-  } catch (error) {
-    window.alert('Не удалось прикрепить карту: ' + displayError(error));
-  } finally {
-    pendingMapPosts.delete(postId);
-  }
+function attachMapFromPost(post) {
+  if (!post.id() || pendingMapPosts.has(post.id())) return;
+  app.modal.show(AttachMapModal, { post });
 }
 
 async function detachMapFromPost(post) {
