@@ -11,7 +11,7 @@ test('forum and composer work before the map picker is exercised', async ({ page
   await page.locator('.LogInModal button[type="submit"]').click();
   await expect(page.locator('.item-logIn')).toHaveCount(0);
   await page.getByRole('button', { name: 'Start a Discussion', exact: true }).click();
-  await page.locator('.DiscussionComposer input').first().fill('Runtime smoke discussion');
+  await page.getByRole('textbox', { name: 'Discussion Title' }).fill('Runtime smoke discussion');
   await page.locator('.TextEditor textarea').fill('[b]Original smoke post[/b]');
   await expect(page.locator('.TextEditor-controls')).toBeVisible();
   await page.getByRole('button', { name: 'Post Discussion', exact: true }).click();
