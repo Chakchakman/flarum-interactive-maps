@@ -2,22 +2,33 @@ name: Extension CI
 
 on:
   pull_request:
+  workflow_dispatch:
   push:
     branches:
       - main
       - 'fix/**'
       - 'feature/**'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: extension-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   php-lint:
     name: PHP syntax validation
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          tools: none
+          tools: composer:v2
+      - name: Validate Composer package metadata
+        run: composer validate --strict --no-check-publish
       - name: Syntax-check PHP files
         run: |
           set -euo pipefail
@@ -32,6 +43,8 @@ jobs:
 
   javascript-build:
     name: JavaScript production build
+    needs: php-lint
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -44,8 +57,24 @@ jobs:
           cache: npm
           cache-dependency-path: js/package-lock.json
       - run: npm ci
-      - run: npm run test:token-sync
-      - run: npm run test:grid
-      - run: npm run test:api
-      - run: npm run test:inline
-      - run: npm run build
+      - run: npm run check
+
+      - name: Package test build with fresh assets
+        working-directory: .
+        run: |
+          set -euo pipefail
+          staging="$RUNNER_TEMP/interactive-maps-package"
+          mkdir -p "$staging"
+          git archive HEAD | tar -x -C "$staging"
+          test -s js/dist/forum.js
+          test -s js/dist/admin.js
+          cp -R js/dist/. "$staging/js/dist/"
+          git rev-parse HEAD > "$staging/BUILD-COMMIT.txt"
+          tar -czf "$RUNNER_TEMP/interactive-maps-test-build.tar.gz" -C "$staging" .
+      - name: Upload test build
+        uses: actions/upload-artifact@v4
+        with:
+          name: interactive-maps-test-build-${{ github.sha }}
+          path: ${{ runner.temp }}/interactive-maps-test-build.tar.gz
+          if-no-files-found: error
+          retention-days: 14
