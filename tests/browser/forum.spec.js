@@ -18,14 +18,14 @@ test('forum and composer work before the map picker is exercised', async ({ page
   await expect(page.locator('.Post-body').first()).toContainText('Original smoke post');
   await expect(page.locator('.Post-body').first().locator('strong, b')).toContainText('Original smoke post');
 
-  await page.locator('.PostStream-item').first().getByRole('button', { name: 'Reply', exact: true }).click();
+  await page.getByRole('button', { name: 'Reply', exact: true }).click();
   await page.locator('.TextEditor textarea').fill('Disposable smoke reply');
   await page.getByRole('button', { name: 'Post Reply', exact: true }).click();
   await expect(page.locator('.Post-body').filter({ hasText: 'Disposable smoke reply' })).toBeVisible();
   expect(errors).toEqual([]);
 
   const post = page.locator('.CommentPost').filter({ hasText: 'Disposable smoke reply' });
-  await post.locator('.Post-controls .Dropdown-toggle').click();
+  await post.getByRole('button', { name: 'Toggle post controls dropdown menu' }).click();
   await page.getByRole('button', { name: 'Прикрепить карту', exact: true }).click();
   await expect(page.locator('.AttachMapModal')).toBeVisible();
   await expect(page.locator('.AttachMapModal')).toContainText('В каталоге пока нет карт.');
