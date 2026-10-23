@@ -10,7 +10,7 @@
 4. The same menu offers **Открепить карту** for already linked posts, using existing protected DELETE API and explicit confirmation. This removes only the association, **not the map or tokens**.
 5. Ordinary players do not see these controls. Server re-checks permissions independently of client visibility.
 
-**Important limit:** At this milestone, copying the marker and pasting it directly into the *message body* does NOT create an attachment automatically. Use the post action to attach. Parsing a marker automatically when a new post is saved is deliberately deferred to a separate integration stage to avoid breaking the editor, post creation and BBCode formatting after the past Mithril regression.
+**Approved UX (2026-10-23):** the user prefers the independent post-menu **«Прикрепить карту»** action over putting a marker in the message body. Copying the marker and pasting it directly into the *message body* does NOT create an attachment: use the post action to attach. Automatic parsing of marker text in the composer is **not planned as the immediate next step**; only revisit if expressly requested. This also avoids reintroducing earlier Flarum editor/Mithril regressions.
 
 ## Local two-account QA (no migrations)
 
