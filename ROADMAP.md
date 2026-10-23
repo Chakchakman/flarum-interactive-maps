@@ -20,6 +20,13 @@ Status: working plan, agreed 2026-10-20. Versions are milestones, not release da
 
 **Staff-only map library, gameplay inside discussion posts.** The /maps catalog is not the players' destination. Admins and authorized moderators/game masters manage maps in a staff-facing control panel. Players see embedded interactive maps inside the discussion posts they are permitted to view, and can move only their own assigned tokens. See [PRODUCT-VISION.md](docs/PRODUCT-VISION.md) for the permissions and implementation design.
 
+### Preferred in-post attachment workflow (agreed 2026-10-23)
+
+- Staff creates a map in the private library, then chooses **«Прикрепить карту»** from the menu of an **existing, editable post**; optionally copies a safe numeric marker from the map's **«Экспорт»** button and pastes it into that dialog.
+- The attachment is a protected **database association**, not content injected into a BBCode post or an arbitrary iframe. This means prose can be edited independently, and **«Открепить карту»** never deletes the reusable map or its tokens.
+- The menu action must remain invisible to ordinary players, while the API enforces permissions even for forged requests. Keep multiple-embed, hidden/private post and role regression tests.
+- **Decision:** do **not** prioritize automatic BBCode/formatter parsing of map references inside the text of posts; user prefers the separate map-linking action. Next improvements should focus on polishing that flow, e.g. map picker/search in the attach dialog, not rewriting Flarum's composer.
+
 ### Future features (provisional)
 
 - **v0.2.0:** **priority feature — embed interactive maps in discussion posts**, staff-only map catalog and configurable manage/embed permissions, server-validated per-post/per-discussion visibility, player move-own-token inside the post. This supersedes the earlier v0.7 embedding schedule.
