@@ -3,6 +3,8 @@
 export function shouldRenderInlineMap({ isComment, hasLinkedMap, isHidden, authenticated }) {
   return isComment === true
     && hasLinkedMap === true
-    && isHidden === false
+    // Flarum 2 omits hiddenAt on ordinary visible comments, so
+    // post.isHidden() may be undefined instead of false.
+    && isHidden !== true
     && authenticated === true;
 }
