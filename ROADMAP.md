@@ -24,11 +24,19 @@ Status: working plan, agreed 2026-10-20. Versions are milestones, not release da
 
 - **v0.2.0:** **priority feature — embed interactive maps in discussion posts**, staff-only map catalog and configurable manage/embed permissions, server-validated per-post/per-discussion visibility, player move-own-token inside the post. This supersedes the earlier v0.7 embedding schedule.
 - **v0.3.0:** multi-client token sync; collision/conflict handling and presence.
-- **v0.4.0:** pan, zoom, measurement tools and map markers.
+- **v0.4.0:** pan, zoom in **both embedded post maps and the staff map editor**, measurement tools and map markers.
 - **v0.5.0:** image upload, map editor, overlays and layers.
 - **v0.6.0:** fog of war, hidden tokens, visibility and conditions.
 - **v0.7.0:** more advanced game sessions, scoped GM assignments and other Flarum integrations.
 - **v1.0.0:** mature documentation, compatibility tests, release/upgrade guarantee.
+
+### Map zoom and navigation — both contexts (v0.4.0; may be pulled forward after v0.2 player movement)
+
+- **Staff map editor (`/maps/{id}`):** `+`, `−`, `100%`/reset controls; optional wheel zoom and panning; do not confuse map navigation with token dragging or grid editing.
+- **Embedded map in a discussion post:** the same zoom controls with a compact toolbar; navigating the board must not hijack normal discussion scrolling; support mouse, trackpad, touch/pinch when feasible.
+- **Geometry:** background, SVG grid and token images scale and move together. Zoom is strictly a client-side *viewport transform*: saved token coordinates, snap-to-grid calculations, image natural dimensions, and map association/permissions remain unchanged.
+- **Isolation:** zoom/pan state is independent for each displayed board (including multiple posts with maps), so changing one board cannot move or scale another.
+- **Acceptance:** zoom in/out/reset on desktop and narrow/mobile layouts, preserve token position relative to grid at every zoom level, no regressions to editor drag-and-drop or forum post/composer rendering, no unauthorized write requests.
 
 ## Branch and release discipline
 
