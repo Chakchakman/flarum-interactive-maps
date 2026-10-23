@@ -26,3 +26,19 @@ The PHP tests currently exercise access helpers; they do not boot Flarum or repl
 The downloadable archive is a test build, not a release. It does not update tracked `js/dist`, create tags, publish to Packagist or install anything on a forum. Before a Composer release, rebuild and commit the dist files into the release commit so the tagged source archive contains them.
 
 Next stages: disposable Flarum integration environment, API authorization tests with real users/posts, then browser tests for the main staff/player flows.
+
+## One-command check in the existing Windows lab
+
+The supplied Compose file mounts `./extension` at `/workspace` for Node (working directory `/workspace/js`) and at `/var/www/flarum/packages/map-correct` for PHP. The script uses those exact paths and explicitly selects the lab's docker-compose.yml.
+
+After switching the extension checkout to this branch, from the lab directory run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\extension\scripts\Test-Lab.ps1
+```
+
+Docker Desktop and the existing app/db services must already be running. The execution-policy option applies to this process only. The script checks Compose, prints Git status and HEAD, validates Composer, runs PHP access-helper tests, installs locked JS dependencies, runs all JS tests and builds, then clears Flarum's cache. Every failed external command stops the sequence; the caller's directory is restored.
+
+This checks/builds the current working tree, including local changes. It does not fetch, switch branches, stash changes, migrate the database or automatically roll back. On failure, cache clearing is skipped; npm/build may already have modified dependencies or generated assets. The original Compose file and its credentials are not copied into the public repository.
+
+Tests in tests/labScriptTest.ps1 mock Git/Docker on Windows PowerShell 5.1 to verify ordering and failure handling. They do not establish that the user's live Docker installation works; the first local run remains necessary.

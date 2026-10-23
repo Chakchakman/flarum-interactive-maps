@@ -78,3 +78,13 @@ jobs:
           path: ${{ runner.temp }}/interactive-maps-test-build.tar.gz
           if-no-files-found: error
           retention-days: 14
+
+  lab-script:
+    name: Windows lab script checks
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check orchestration and stop-on-error behavior
+        shell: powershell
+        run: ./tests/labScriptTest.ps1
