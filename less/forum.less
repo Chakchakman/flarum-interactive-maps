@@ -59,6 +59,8 @@
 .ChakMapEmbed-heading strong { overflow-wrap: anywhere; }
 .ChakMapEmbed .ChakMap-canvas { border-radius: 8px; touch-action: auto; }
 .ChakMapEmbed .ChakMap-token { width: clamp(26px, 4vw, 54px); height: clamp(26px, 4vw, 54px); pointer-events: none; }
+.ChakMapEmbed .ChakMap-token.is-mine { pointer-events: auto; touch-action: none; cursor: grab; }
+.ChakMapEmbed .ChakMap-token.is-dragging { cursor: grabbing; }
 .ChakMapEmbed .ChakMaps-muted { margin-top: 10px; }
 @media(max-width: 600px) {
   .ChakMapEmbed { padding: 8px; }

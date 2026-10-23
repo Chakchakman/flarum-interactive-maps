@@ -27,6 +27,8 @@ jobs:
         run: php tests/mapPermissionsTest.php
       - name: Test post-map visibility and attach rules
         run: php tests/postMapAccessTest.php
+      - name: Test post-scoped token movement rights
+        run: php tests/postTokenMoveAccessTest.php
 
   javascript-build:
     name: JavaScript production build
