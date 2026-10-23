@@ -1,10 +1,10 @@
 <?php
 
-namespace ChakChakMan\InteractiveMaps\Api;
+namespace ChakChakman\InteractiveMaps\Api;
 
-use ChakChakMan\InteractiveMaps\Access\PostMapAccess;
-use ChakChakMan\InteractiveMaps\Models\Map;
-use ChakChakMan\InteractiveMaps\Models\MapEmbed;
+use ChakChakman\InteractiveMaps\Access\PostMapAccess;
+use ChakChakman\InteractiveMaps\Models\Map;
+use ChakChakman\InteractiveMaps\Models\MapEmbed;
 use Flarum\Http\RequestUtil;
 use Flarum\Post\Post;
 use Illuminate\Database\QueryException;
@@ -19,7 +19,7 @@ class AttachMapToPostController extends ApiController implements RequestHandlerI
         $actor = RequestUtil::getActor($request);
         // Requiring both permissions prevents users with only the embed
         // permission from bypassing the private staff map library.
-        if (!$this->manage($request) || !\ChakChakMan\InteractiveMaps\Access\MapPermissions::canEmbed($actor)) {
+        if (!$this->manage($request) || !\ChakChakman\InteractiveMaps\Access\MapPermissions::canEmbed($actor)) {
             return $this->error('Недостаточно прав для прикрепления карты', 403);
         }
 
