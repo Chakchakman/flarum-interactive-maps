@@ -8,6 +8,7 @@ use Flarum\Post\Post;
 class MapEmbed extends AbstractModel
 {
     protected $table = 'chak_map_embeds';
+    public $timestamps = true;
     protected $guarded = [];
 
     public function map()
