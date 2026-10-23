@@ -37,3 +37,29 @@
   .ChakMaps-layout, .ChakMap-layout { grid-template-columns: 1fr; }
   .ChakMap-sidebar { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
 }
+
+/* Lazy inline map inside a permitted Flarum comment. Read-only in alpha.3. */
+.ChakMapEmbed {
+  clear: both;
+  margin: 16px 0 8px;
+  padding: 12px;
+  border: 1px solid rgba(128,128,128,.25);
+  border-radius: 12px;
+  background: var(--control-bg, #f0f1f3);
+  min-width: 0;
+}
+.ChakMapEmbed-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.ChakMapEmbed-heading strong { overflow-wrap: anywhere; }
+.ChakMapEmbed .ChakMap-canvas { border-radius: 8px; touch-action: auto; }
+.ChakMapEmbed .ChakMap-token { width: clamp(26px, 4vw, 54px); height: clamp(26px, 4vw, 54px); pointer-events: none; }
+.ChakMapEmbed .ChakMaps-muted { margin-top: 10px; }
+@media(max-width: 600px) {
+  .ChakMapEmbed { padding: 8px; }
+}
