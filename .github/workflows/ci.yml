@@ -25,6 +25,8 @@ jobs:
             xargs -0 -r -n 1 php -l
       - name: Test map management permissions
         run: php tests/mapPermissionsTest.php
+      - name: Test post-map visibility and attach rules
+        run: php tests/postMapAccessTest.php
 
   javascript-build:
     name: JavaScript production build
