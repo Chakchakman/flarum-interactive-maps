@@ -235,6 +235,7 @@ export default class EmbeddedPostMap extends Component {
             </div>
             <MapBoard map={map}
               metrics={gridMetrics(map.gridSize, map.gridOffsetX, map.gridOffsetY, this.imageDimensions)}
+              invalidateParent={() => this.attrs.invalidateParent?.()}
               canMoveToken={(token) => this.canMoveToken(token)}
               onTokenPointerDown={(event, token) => this.beginDrag(event, token)} />
             {this.moveError && <p className="ChakMaps-error">{this.moveError}</p>}
