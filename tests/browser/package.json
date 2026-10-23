@@ -1,0 +1,1 @@
+{"name":"interactive-maps-browser-tests","private":true,"scripts":{"test":"playwright test"},"devDependencies":{"@playwright/test":"1.56.1"}}
