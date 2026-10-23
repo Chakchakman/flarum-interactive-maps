@@ -17,5 +17,9 @@ test('show only a linked visible comment to a signed-in viewer', () => {
   assert.equal(shouldRenderInlineMap({ ...allowed, isComment: false }), false);
   assert.equal(shouldRenderInlineMap({ ...allowed, hasLinkedMap: 1 }), false);
   assert.equal(shouldRenderInlineMap({ ...allowed, hasLinkedMap: undefined }), false);
-  assert.equal(shouldRenderInlineMap({ ...allowed, isHidden: undefined }), false);
+  // Real Flarum 2 post payload omits hiddenAt for visible comments.
+  assert.equal(shouldRenderInlineMap({ ...allowed, isHidden: undefined }), true);
+  assert.equal(shouldRenderInlineMap({ ...allowed, isHidden: null }), true);
+  assert.equal(shouldRenderInlineMap({ ...allowed, isHidden: false }), true);
+  assert.equal(shouldRenderInlineMap({ ...allowed, isHidden: true }), false);
 });
