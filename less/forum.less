@@ -115,3 +115,19 @@
   .ChakMap-zoom { flex-wrap: wrap; gap: 6px; }
   .ChakMap-zoom input[type=range] { max-width: none; }
 }
+
+.AttachMapModal {
+  &-body > .FormControl { margin-top: 8px; }
+  &-list { max-height: 320px; overflow-y: auto; margin: 16px 0; }
+  &-map {
+    display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px;
+    margin-bottom: 6px; border: 2px solid transparent; border-radius: 6px;
+    background: @control-bg; color: @control-color; text-align: left; cursor: pointer;
+    &[aria-pressed="true"] { border-color: @primary-color; }
+    &:focus-visible { outline: 2px solid @primary-color; outline-offset: -2px; }
+    img { width: 76px; height: 54px; object-fit: cover; flex-shrink: 0; }
+    span { min-width: 0; overflow-wrap: anywhere; }
+    small { display: block; margin-top: 4px; }
+  }
+  &-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+}
