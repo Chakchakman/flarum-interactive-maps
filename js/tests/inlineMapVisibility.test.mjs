@@ -23,3 +23,13 @@ test('show only a linked visible comment to a signed-in viewer', () => {
   assert.equal(shouldRenderInlineMap({ ...allowed, isHidden: false }), true);
   assert.equal(shouldRenderInlineMap({ ...allowed, isHidden: true }), false);
 });
+
+test('post stream renders an unkeyed map vnode alongside unkeyed Flarum comment nodes', async () => {
+  // Flarum CommentPost.content() already returns unkeyed <Comment> children.
+  // Keying only the injected map crashes the Mithril post stream.
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL('../src/forum/index.js', import.meta.url), 'utf8');
+  const mapVnode = source.match(/<EmbeddedPostMap\b[^>]*\/>/s)?.[0];
+  assert.ok(mapVnode, 'inline map vnode must be present');
+  assert.doesNotMatch(mapVnode, /\bkey\s*=/, 'do not mix keyed and unkeyed children in CommentPost.content()');
+});
