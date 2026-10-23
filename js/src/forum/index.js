@@ -18,7 +18,10 @@ app.initializers.add('chakchakman-interactive-maps', () => {
       isHidden: post.isHidden(),
       authenticated: !!app.session.user,
     })) {
-      children.push(<EmbeddedPostMap key={`chak-post-map-${post.id()}`} postId={post.id()} />);
+      // Flarum's CommentPost uses SubtreeRetainer. Force a parent diff after
+      // an async board/image load or the child can remain stuck on "loading".
+      children.push(<EmbeddedPostMap key={`chak-post-map-${post.id()}`} postId={post.id()}
+        invalidateParent={() => this.subtree.invalidate()} />);
     }
   });
   extend(HeaderPrimary.prototype, 'items', function (items) {
