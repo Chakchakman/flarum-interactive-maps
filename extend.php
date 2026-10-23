@@ -2,6 +2,9 @@
 
 use Flarum\Extend;
 use Flarum\Api\Resource\ForumResource;
+use Flarum\Api\Resource\PostResource;
+use Flarum\Post\Post;
+use Flarum\Post\CommentPost;
 use Flarum\Api\Schema;
 use Flarum\Api\Context;
 use ChakChakman\InteractiveMaps\Access\MapPermissions;
@@ -33,6 +36,36 @@ return [
         ->fields(fn () => [
             Schema\Boolean::make('canManageChakMaps')
                 ->get(fn ($forum, Context $context) => MapPermissions::canManage($context->getActor())),
+        ]),
+
+    // A lightweight per-post hint. Only posts already serialized by Flarum
+    // can carry the flag; the actual map/tokens remain behind the existing
+    // post-scoped, visibility-aware endpoint.
+    (new Extend\ApiResource(PostResource::class))
+        ->fields(fn () => [
+            Schema\Boolean::make('hasChakMap')
+                ->get(function (Post $post, Context $context): bool {
+                    if (!($post instanceof CommentPost)
+                        || $post->hidden_at !== null
+                        || $context->getActor()->isGuest()) {
+                        return false;
+                    }
+
+                    // One indexed lookup per discussion instead of one per post.
+                    // PHP static variables are scoped to this HTTP request.
+                    static $embedPostsByDiscussion = [];
+                    $discussionId = (int) $post->discussion_id;
+                    if (!isset($embedPostsByDiscussion[$discussionId])) {
+                        $postIds = MapEmbed::query()
+                            ->join('posts', 'posts.id', '=', 'chak_map_embeds.post_id')
+                            ->where('posts.discussion_id', $discussionId)
+                            ->pluck('chak_map_embeds.post_id')
+                            ->all();
+                        $embedPostsByDiscussion[$discussionId] = array_fill_keys($postIds, true);
+                    }
+
+                    return isset($embedPostsByDiscussion[$discussionId][$post->id]);
+                }),
         ]),
 
     (new Extend\Frontend('forum'))
