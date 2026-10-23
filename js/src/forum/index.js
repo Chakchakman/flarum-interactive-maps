@@ -20,7 +20,9 @@ app.initializers.add('chakchakman-interactive-maps', () => {
     })) {
       // Flarum's CommentPost uses SubtreeRetainer. Force a parent diff after
       // an async board/image load or the child can remain stuck on "loading".
-      children.push(<EmbeddedPostMap key={`chak-post-map-${post.id()}`} postId={post.id()}
+      // CommentPost.content() contains unkeyed Flarum nodes. Adding a keyed
+      // child mixes vnode key modes and crashes Mithril's entire post stream.
+      children.push(<EmbeddedPostMap postId={post.id()}
         invalidateParent={() => this.subtree.invalidate()} />);
     }
   });
