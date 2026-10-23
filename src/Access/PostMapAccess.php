@@ -1,6 +1,6 @@
 <?php
 
-namespace ChakChakMan\InteractiveMaps\Access;
+namespace ChakChakman\InteractiveMaps\Access;
 
 use Flarum\Post\CommentPost;
 use Flarum\Post\Post;
