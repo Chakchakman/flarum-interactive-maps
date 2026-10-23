@@ -1,9 +1,9 @@
 <?php
 
-namespace ChakChakMan\InteractiveMaps\Api;
+namespace ChakChakman\InteractiveMaps\Api;
 
-use ChakChakMan\InteractiveMaps\Access\PostMapAccess;
-use ChakChakMan\InteractiveMaps\Models\MapEmbed;
+use ChakChakman\InteractiveMaps\Access\PostMapAccess;
+use ChakChakman\InteractiveMaps\Models\MapEmbed;
 use Flarum\Http\RequestUtil;
 use Flarum\Post\Post;
 use Psr\Http\Message\ServerRequestInterface as Request;
