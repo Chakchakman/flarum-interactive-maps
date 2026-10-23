@@ -1,0 +1,74 @@
+name: Flarum runtime smoke
+on:
+  pull_request:
+  push:
+    branches: ['fix/flarum-runtime-smoke']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: runtime-smoke-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: smoke-only
+          MARIADB_DATABASE: flarum_smoke
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          extensions: mbstring, xml, dom, curl, gd, pdo_mysql, zip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build tested extension
+        working-directory: js
+        run: npm ci && npm run check
+      - name: Install isolated Flarum 2
+        env:
+          COMPOSER_ALLOW_SUPERUSER: '1'
+        run: |
+          set -euo pipefail
+          composer create-project flarum/flarum "$RUNNER_TEMP/forum" '^2.0' --no-install --no-interaction
+          cd "$RUNNER_TEMP/forum"
+          composer config repositories.maps path "$GITHUB_WORKSPACE"
+          composer require 'chakchakman/flarum-interactive-maps:*@dev' --no-interaction --with-all-dependencies
+          composer show flarum/core
+          cat > "$RUNNER_TEMP/install.json" <<'JSON'
+          {"baseUrl":"http://127.0.0.1:8888","debug":true,"databaseConfiguration":{"driver":"mysql","host":"127.0.0.1","port":3306,"database":"flarum_smoke","username":"root","password":"smoke-only","prefix":""},"adminUser":{"username":"smokeadmin","password":"Smoke-test-only-9821","email":"smoke@example.test"},"settings":{"forum_title":"Maps isolated smoke","mail_driver":"log"},"extensions":"flarum-lang-english,flarum-bbcode,flarum-markdown,chakchakman-interactive-maps"}
+          JSON
+          php flarum install --file="$RUNNER_TEMP/install.json"
+          php flarum cache:clear
+          php -S 127.0.0.1:8888 -t public > "$RUNNER_TEMP/forum-server.log" 2>&1 &
+      - name: Install browser
+        working-directory: tests/browser
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Exercise forum UI
+        working-directory: tests/browser
+        run: npm test
+      - name: Save browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flarum-runtime-diagnostics
+          path: |
+            tests/browser/playwright-report
+            tests/browser/test-results
+            ${{ runner.temp }}/forum-server.log
+            ${{ runner.temp }}/forum/storage/logs
+            ${{ runner.temp }}/forum/composer.lock
+          retention-days: 7

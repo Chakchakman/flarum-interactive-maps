@@ -21,3 +21,23 @@ Node tests exercise search/ID validation and the modal's request lifecycle with 
 7. Test narrow screen, light/dark themes and multiple embedded maps. No composer/formatter integration is added.
 
 Rollback: return to the previously tested alpha.6 checkout, rebuild JS and clear Flarum cache. No database restore or migration is needed. Keep this PR draft until live acceptance; commit release dist only after acceptance.
+
+## Cloud browser regression suite (2026-10-24)
+
+`tests/browser` now exercises five scenarios against a real Flarum 2 installation:
+
+1. Forum boot/admin login/new discussion/reply/BBCode, inert marker, post-menu picker and cancellation. Resolve the saved reply by its API ID: Flarum's optimistic preview can temporarily share its text.
+2. Cyrillic title search, image thumbnails, ID/marker input, explicit selection, cancel without POST, one successful association, reload and detach without deleting the map or changing BBCode.
+3. Simulated catalog/attachment 503 failures, real retries, preserved selection and one successful POST on double-click.
+4. Simulated empty/latest-100 catalog window, invalid input, a real missing-map 404 without a false attachment hint, and explicit existing ID outside the returned list.
+5. Separate confirmed player session: catalog/attach/legacy-move/other-token/unlinked-post denial; real pointer drag of their own token at 200% zoom; saved coordinates after reload and unchanged other token.
+
+Every scenario checks for JavaScript page exceptions. Successful map operations and authorization use the real API/database; only catalog-window/error responses and a disposable SVG image are intercepted. Fixtures are uniquely named and retained; tests do not reset the database or delete existing maps/users. Mail uses Flarum's log driver in CI.
+
+The picker had a real ARIA/CSS regression: boolean `aria-pressed` became an empty attribute in Mithril. String values restore both selection styling and accessible pressed state; the browser asserts false/true and preservation after failed attachment. BBCode may render as either `<b>` or `<strong>`; assertions require a bold element with the exact original text.
+
+Run `cd tests/browser && npm ci && npx playwright install --with-deps chromium && npm test` only against the isolated fixture forum configured in `.github/workflows/runtime-smoke.yml`, never against the owner's live database. CI uses Playwright's bundled Chromium; the initial cloud run used system Chromium 154 with a local config and MariaDB 11.4.13 instead of CI's 11.8. Results do not replace owner acceptance, mobile/theme checks, explicit GM permissions, or private-discussion integrations.
+
+Local outcome: **5/5 browser scenarios passed, 39/39 JS tests passed, 27 PHP permission assertions passed; Composer strict validation, PHP syntax and production builds passed.** Owner acceptance and the CI result for the new commit remain separate gates.
+
+CI confirmation for code commit `f2c5fdaf541e68993db9b7988cf29a60d6e3293b`: [Extension CI 40040296018](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40040296018) and [Flarum runtime smoke 40040296019](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40040296019) both **Success**. Windows checks passed in GitHub CI. The subsequent base synchronization changes documentation/agent instructions only; owner acceptance and release approval remain pending.

@@ -97,7 +97,7 @@ export default class AttachMapModal extends Modal {
         <p>{this.maps.length ? 'Карты не найдены.' : 'В каталоге пока нет карт.'}</p>}
       <div className="AttachMapModal-list" aria-label="Доступные карты">
         {maps.map((map) => <button key={map.id} type="button"
-          className="AttachMapModal-map" aria-pressed={this.selectedId === Number(map.id)}
+          className="AttachMapModal-map" aria-pressed={String(this.selectedId === Number(map.id))}
           disabled={this.loading} onclick={() => { this.selectedId = Number(map.id); this.error = ''; }}>
           <img src={map.backgroundUrl} alt="" loading="lazy" decoding="async" />
           <span><strong>{map.title}</strong><small>Карта #{map.id}</small></span>
