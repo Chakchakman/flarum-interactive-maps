@@ -11,6 +11,7 @@ import { LatestTokenMoveQueue } from '../tokenMoveQueue.mjs';
 import { DebouncedGridSaveQueue } from '../gridSaveQueue.mjs';
 import { FALLBACK_IMAGE, gridMetrics, snapToCellCenter, validImageSize } from '../gridGeometry.mjs';
 import MapBoard from '../components/MapBoard';
+import { mapEmbedCode } from '../mapEmbedCode.mjs';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const GRID_FIELDS = ['gridSize', 'gridOffsetX', 'gridOffsetY', 'gridEnabled', 'snapToGrid'];
@@ -26,6 +27,7 @@ export default class MapPage extends Page {
     this.canManage = false;
     this.loading = true;
     this.error = '';
+    this.exportMessage = '';
     this.tokenName = '';
     this.tokenImageUrl = '';
     this.tokenOwner = '';
@@ -264,6 +266,21 @@ export default class MapPage extends Page {
     m.redraw();
   }
 
+  async copyExportCode() {
+    if (!this.map || !this.canManage) return;
+    const code = mapEmbedCode(this.map.id);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+      await navigator.clipboard.writeText(code);
+      this.exportMessage = 'Код скопирован. Открой сообщение и выбери в меню «Прикрепить карту».';
+    } catch (_error) {
+      // Clipboard API may not be available outside secure contexts.
+      window.prompt('Скопируй код карты:', code);
+      this.exportMessage = 'Код можно вставить через меню сообщения «Прикрепить карту».';
+    }
+    m.redraw();
+  }
+
   saveGrid(changes) {
     if (!this.canManage || !this.map) return;
     this.localRevision += 1;
@@ -332,7 +349,8 @@ export default class MapPage extends Page {
     );
     return (
       <div className="container ChakMaps-page ChakMap-page">
-        <div className="ChakMaps-top"><Link href={app.route('chak.maps')}>← Все карты</Link><h1>{map.title}</h1><button className="Button" onclick={() => this.refresh()}>Обновить позиции</button></div>
+        <div className="ChakMaps-top"><Link href={app.route('chak.maps')}>← Все карты</Link><h1>{map.title}</h1><button className="Button" onclick={() => this.refresh()}>Обновить позиции</button>{this.canManage && <button className="Button Button--primary" type="button" onclick={() => this.copyExportCode()}>Экспорт · Копировать код</button>}</div>
+        {this.exportMessage && <p className="ChakMaps-muted" role="status">{this.exportMessage}</p>}
         {this.error && <p className="ChakMaps-error">{this.error}</p>}
         <div className="ChakMap-layout">
           <div className="ChakMap-stage">
