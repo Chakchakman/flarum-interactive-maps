@@ -11,4 +11,14 @@ export default [
     'moderate',
     95
   ),
+  new Extend.Admin().permission(
+    () => ({
+      icon: 'fas fa-link',
+      label: 'Прикреплять игровые карты к сообщениям',
+      permission: 'chakchakman-interactive-maps.map.embed',
+      tagScoped: false,
+    }),
+    'moderate',
+    94
+  ),
 ];

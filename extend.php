@@ -13,8 +13,19 @@ use ChakChakman\InteractiveMaps\Api\DeleteMapController;
 use ChakChakman\InteractiveMaps\Api\CreateTokenController;
 use ChakChakman\InteractiveMaps\Api\MoveTokenController;
 use ChakChakman\InteractiveMaps\Api\AssignTokenController;
+use ChakChakman\InteractiveMaps\Api\AttachMapToPostController;
+use ChakChakman\InteractiveMaps\Api\ShowPostMapController;
+use ChakChakman\InteractiveMaps\Api\DetachMapFromPostController;
+use ChakChakman\InteractiveMaps\Models\MapEmbed;
+use Flarum\Post\Event\Deleted as PostDeleted;
 
 return [
+    // Remove persisted links when a comment post is deleted.
+    (new Extend\Event())
+        ->listen(PostDeleted::class, function (PostDeleted $event) {
+            MapEmbed::query()->where('post_id', $event->post->id)->delete();
+        }),
+
     (new Extend\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js'),
 
@@ -38,5 +49,8 @@ return [
         ->delete('/chak-maps/{id}', 'chak.maps.delete', DeleteMapController::class)
         ->post('/chak-maps/{id}/tokens', 'chak.tokens.create', CreateTokenController::class)
         ->post('/chak-tokens/{id}/move', 'chak.tokens.move', MoveTokenController::class)
-        ->patch('/chak-tokens/{id}/owner', 'chak.tokens.assign', AssignTokenController::class),
+        ->patch('/chak-tokens/{id}/owner', 'chak.tokens.assign', AssignTokenController::class)
+        ->post('/chak-map-embeds', 'chak.map-embeds.attach', AttachMapToPostController::class)
+        ->get('/chak-map-embeds/{id}', 'chak.map-embeds.show', ShowPostMapController::class)
+        ->delete('/chak-map-embeds/{id}', 'chak.map-embeds.detach', DetachMapFromPostController::class),
 ];

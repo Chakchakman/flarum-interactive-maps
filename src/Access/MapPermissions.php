@@ -20,4 +20,10 @@ final class MapPermissions
         return !$actor->isGuest()
             && ($actor->isAdmin() || $actor->hasPermission(self::MANAGE));
     }
+
+    public static function canEmbed(User $actor): bool
+    {
+        return !$actor->isGuest()
+            && ($actor->isAdmin() || $actor->hasPermission(self::EMBED));
+    }
 }

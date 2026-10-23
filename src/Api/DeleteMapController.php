@@ -3,6 +3,7 @@
 namespace ChakChakman\InteractiveMaps\Api;
 
 use ChakChakman\InteractiveMaps\Models\Map;
+use ChakChakman\InteractiveMaps\Models\MapEmbed;
 use Flarum\Api\JsonApiResponse;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -34,6 +35,8 @@ class DeleteMapController extends ApiController implements RequestHandlerInterfa
             // The current schema has no ON DELETE CASCADE constraint.
             // Remove tokens in the same transaction to avoid orphan rows.
             $map->tokens()->delete();
+            // A deleted map must not leave post associations pointing at it.
+            MapEmbed::query()->where('map_id', $id)->delete();
             $map->delete();
 
             return true;
