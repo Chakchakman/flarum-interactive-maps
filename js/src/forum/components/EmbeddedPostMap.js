@@ -4,6 +4,7 @@ import { normalizeMapResponse, normalizeToken, resourceBody } from '../apiRespon
 import { LatestTokenMoveQueue } from '../tokenMoveQueue.mjs';
 import { FALLBACK_IMAGE, gridMetrics, snapToCellCenter, validImageSize } from '../gridGeometry.mjs';
 import MapBoard from './MapBoard';
+import { canDragPostToken } from '../inlineTokenPermission.mjs';
 
 // Interactive post map: all movement writes go through a post-scoped,
 // visibility-checked route. The staff editor uses a separate API.
@@ -134,11 +135,11 @@ export default class EmbeddedPostMap extends Component {
   }
 
   canMoveToken(token) {
-    const userId = app.session.user?.id();
-    return !!userId && (
-      app.forum.attribute('canManageChakMaps') === true ||
-      (token.ownerUserId != null && String(token.ownerUserId) === String(userId))
-    );
+    return canDragPostToken({
+      actorId: app.session.user?.id(),
+      canManageMaps: app.forum.attribute('canManageChakMaps') === true,
+      ownerUserId: token.ownerUserId,
+    });
   }
 
   detachDragListeners() {
