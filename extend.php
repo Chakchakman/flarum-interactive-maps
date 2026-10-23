@@ -1,6 +1,10 @@
 <?php
 
 use Flarum\Extend;
+use Flarum\Api\Resource\ForumResource;
+use Flarum\Api\Schema;
+use Flarum\Api\Context;
+use ChakChakman\InteractiveMaps\Access\MapPermissions;
 use ChakChakman\InteractiveMaps\Api\ListMapsController;
 use ChakChakman\InteractiveMaps\Api\CreateMapController;
 use ChakChakman\InteractiveMaps\Api\ShowMapController;
@@ -11,6 +15,15 @@ use ChakChakman\InteractiveMaps\Api\MoveTokenController;
 use ChakChakman\InteractiveMaps\Api\AssignTokenController;
 
 return [
+    (new Extend\Frontend('admin'))
+        ->js(__DIR__.'/js/dist/admin.js'),
+
+    (new Extend\ApiResource(ForumResource::class))
+        ->fields(fn () => [
+            Schema\Boolean::make('canManageChakMaps')
+                ->get(fn ($forum, Context $context) => MapPermissions::canManage($context->getActor())),
+        ]),
+
     (new Extend\Frontend('forum'))
         ->js(__DIR__.'/js/dist/forum.js')
         ->css(__DIR__.'/less/forum.less')

@@ -23,6 +23,8 @@ jobs:
           set -euo pipefail
           find . -path './js/node_modules' -prune -o -type f -name '*.php' -print0 |
             xargs -0 -r -n 1 php -l
+      - name: Test map management permissions
+        run: php tests/mapPermissionsTest.php
 
   javascript-build:
     name: JavaScript production build

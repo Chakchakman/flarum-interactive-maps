@@ -13,7 +13,7 @@ class CreateTokenController extends ApiController implements RequestHandlerInter
 {
     public function handle(Request $request): Response
     {
-        if (!$this->admin($request)) return $this->error('Нет прав', 403);
+        if (!$this->manage($request)) return $this->error('Нет прав', 403);
         $map = Map::find($this->id($request));
         if (!$map) return $this->error('Карта не найдена', 404);
         $data = $this->data($request);

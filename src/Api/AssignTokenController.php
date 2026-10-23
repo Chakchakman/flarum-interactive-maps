@@ -12,7 +12,7 @@ class AssignTokenController extends ApiController implements RequestHandlerInter
 {
     public function handle(Request $request): Response
     {
-        if (!$this->admin($request)) return $this->error('Нет прав', 403);
+        if (!$this->manage($request)) return $this->error('Нет прав', 403);
         $token = Token::find($this->id($request));
         if (!$token) return $this->error('Фишка не найдена', 404);
         $username = trim((string) ($this->data($request)['ownerUsername'] ?? ''));

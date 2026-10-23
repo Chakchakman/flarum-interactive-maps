@@ -13,7 +13,7 @@ class DeleteMapController extends ApiController implements RequestHandlerInterfa
     public function handle(Request $request): Response
     {
         // Hiding a Delete button is not authorization: enforce rights here.
-        if (!$this->admin($request)) {
+        if (!$this->manage($request)) {
             return $this->error('Недостаточно прав для удаления карты', 403);
         }
 

@@ -14,7 +14,8 @@ export default class MapListPage extends Page {
     this.error = '';
     this.creating = false;
     this.deletingIds = new Set();
-    this.load();
+    this.staffAllowed = app.forum.attribute('canManageChakMaps') === true;
+    if (this.staffAllowed) this.load();
   }
 
   oncreate(vnode) {
@@ -83,6 +84,13 @@ export default class MapListPage extends Page {
   }
 
   view() {
+    if (!this.staffAllowed) {
+      return <div className="container ChakMaps-page">
+        <p className="ChakMaps-error">Каталог карт доступен только администрации и назначенным мастерам.</p>
+        <p><Link href="/">← На форум</Link></p>
+      </div>;
+    }
+
     return (
       <div className="container ChakMaps-page">
         <div className="ChakMaps-heading">

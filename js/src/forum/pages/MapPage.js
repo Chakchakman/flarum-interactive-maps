@@ -20,6 +20,7 @@ export default class MapPage extends Page {
   oninit(vnode) {
     super.oninit(vnode);
     this.mapId = String(vnode.attrs.id);
+    this.staffAllowed = app.forum.attribute('canManageChakMaps') === true;
     this.map = null;
     this.canManage = false;
     this.loading = true;
@@ -106,11 +107,12 @@ export default class MapPage extends Page {
         },
       }
     );
-    this.refresh();
+    if (this.staffAllowed) this.refresh();
   }
 
   oncreate(vnode) {
     super.oncreate(vnode);
+    if (!this.staffAllowed) return;
     this.moveListener = this.move.bind(this);
     this.endListener = this.end.bind(this);
     window.addEventListener('pointermove', this.moveListener);
@@ -129,6 +131,7 @@ export default class MapPage extends Page {
   }
 
   onremove(vnode) {
+    if (!this.staffAllowed) return;
     // Commit an unsent slider value when navigating away from the editor.
     void this.gridUpdates.flushNow();
     this.removed = true;
@@ -309,6 +312,13 @@ export default class MapPage extends Page {
   }
 
   view() {
+    if (!this.staffAllowed) {
+      return <div className="container ChakMaps-page">
+        <p className="ChakMaps-error">Редактор карт доступен только администрации и назначенным мастерам.</p>
+        <p><Link href="/">← На форум</Link></p>
+      </div>;
+    }
+
     if (this.loading) return <div className="container ChakMaps-page"><p>Загружаем карту…</p></div>;
     if (!this.map) return <div className="container ChakMaps-page">
       <p className="ChakMaps-error">{this.error || `Не удалось загрузить карту #${this.mapId}. Проверь ответ API.`}</p>
@@ -358,7 +368,7 @@ export default class MapPage extends Page {
                 />
               ))}
             </div>
-            <p className="ChakMaps-muted">Перетаскивай собственную фишку мышью. Администратор может двигать все фишки. Координаты сохраняются в базе Flarum.</p>
+            <p className="ChakMaps-muted">Редактор для мастеров: можно перемещать фишки и назначать их владельцев. Перемещение игроками прямо в игровых сообщениях появится на следующем этапе v0.2.</p>
           </div>
           <div className="ChakMap-sidebar">
             <section className="ChakMaps-panel">

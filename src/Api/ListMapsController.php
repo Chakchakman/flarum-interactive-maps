@@ -11,10 +11,10 @@ class ListMapsController extends ApiController implements RequestHandlerInterfac
 {
     public function handle(Request $request): Response
     {
-        \Flarum\Http\RequestUtil::getActor($request)->assertRegistered();
+        if (!$this->manage($request)) return $this->error('Доступ к каталогу карт разрешён только мастерам', 403);
 
         $maps = Map::query()->orderByDesc('id')->limit(100)->get()
             ->map(fn (Map $map) => $this->mapResource($map))->all();
-        return $this->document($maps, 200, ['canManage' => $this->admin($request)]);
+        return $this->document($maps, 200, ['canManage' => $this->manage($request)]);
     }
 }

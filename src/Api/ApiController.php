@@ -3,6 +3,7 @@
 namespace ChakChakman\InteractiveMaps\Api;
 
 use Flarum\User\User;
+use ChakChakman\InteractiveMaps\Access\MapPermissions;
 use ChakChakman\InteractiveMaps\Models\Map;
 use ChakChakman\InteractiveMaps\Models\Token;
 use Flarum\Api\JsonApiResponse;
@@ -27,10 +28,10 @@ abstract class ApiController
         return $body;
     }
 
-    protected function admin(Request $request): bool
+    protected function manage(Request $request): bool
     {
         $actor = \Flarum\Http\RequestUtil::getActor($request);
-        return $actor instanceof User && $actor->isAdmin();
+        return $actor instanceof User && MapPermissions::canManage($actor);
     }
 
     protected function error(string $message, int $status = 400): JsonApiResponse
