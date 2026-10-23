@@ -43,6 +43,12 @@ export default class EmbeddedPostMap extends Component {
     this.observer?.disconnect();
   }
 
+  requestRedraw() {
+    if (this.removed) return;
+    this.attrs.invalidateParent?.();
+    m.redraw();
+  }
+
   async load() {
     if (this.loading || this.removed) return;
     this.requested = true;
@@ -67,7 +73,7 @@ export default class EmbeddedPostMap extends Component {
       }
     } finally {
       this.loading = false;
-      if (!this.removed) m.redraw();
+      this.requestRedraw();
     }
   }
 
@@ -85,12 +91,12 @@ export default class EmbeddedPostMap extends Component {
       } else {
         this.imageStatus = 'error';
       }
-      m.redraw();
+      this.requestRedraw();
     };
     img.onerror = () => {
       if (this.removed || this.imageUrl !== url) return;
       this.imageStatus = 'error';
-      m.redraw();
+      this.requestRedraw();
     };
     img.src = url;
   }
