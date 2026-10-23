@@ -1,6 +1,6 @@
 <?php
 
-namespace ChakChakMan\InteractiveMaps\Models;
+namespace ChakChakman\InteractiveMaps\Models;
 
 use Flarum\Database\AbstractModel;
 use Flarum\Post\Post;
