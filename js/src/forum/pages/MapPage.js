@@ -10,6 +10,7 @@ import {
 import { LatestTokenMoveQueue } from '../tokenMoveQueue.mjs';
 import { DebouncedGridSaveQueue } from '../gridSaveQueue.mjs';
 import { FALLBACK_IMAGE, gridMetrics, snapToCellCenter, validImageSize } from '../gridGeometry.mjs';
+import MapBoard from '../components/MapBoard';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const GRID_FIELDS = ['gridSize', 'gridOffsetX', 'gridOffsetY', 'gridEnabled', 'snapToGrid'];
@@ -335,39 +336,9 @@ export default class MapPage extends Page {
         {this.error && <p className="ChakMaps-error">{this.error}</p>}
         <div className="ChakMap-layout">
           <div className="ChakMap-stage">
-            <div className="ChakMap-canvas" style={{
-              backgroundImage: `url("${map.backgroundUrl.replace(/"/g, '%22')}")`,
-              aspectRatio: metrics.aspectRatio,
-            }}>
-              {map.gridEnabled && (
-                <svg className="ChakMap-grid" aria-hidden="true"
-                  viewBox={`0 0 ${metrics.width} ${metrics.height}`}
-                  preserveAspectRatio="none">
-                  <defs>
-                    <pattern id={this.gridPatternId} patternUnits="userSpaceOnUse"
-                      x={metrics.offsetX} y={metrics.offsetY}
-                      width={metrics.cell} height={metrics.cell}>
-                      <path d={`M 0 0 L ${metrics.cell} 0 M 0 0 L 0 ${metrics.cell}`}
-                        fill="none" stroke="rgba(255,255,255,.48)" strokeWidth="1" />
-                    </pattern>
-                  </defs>
-                  <rect x="0" y="0" width={metrics.width} height={metrics.height}
-                    fill={`url(#${this.gridPatternId})`} />
-                </svg>
-              )}
-              {map.tokens.map((token) => (
-                <img
-                  key={token.id}
-                  draggable="false"
-                  className={`ChakMap-token ${this.isMine(token) ? 'is-mine' : ''}`}
-                  src={token.imageUrl}
-                  title={`${token.name}${token.ownerUsername ? ` (@${token.ownerUsername})` : ' (без владельца)'}`}
-                  alt={token.name}
-                  style={{ left: `${token.x * 100}%`, top: `${token.y * 100}%` }}
-                  onpointerdown={(event) => this.begin(event, token)}
-                />
-              ))}
-            </div>
+            <MapBoard map={map} metrics={metrics} gridPatternId={this.gridPatternId}
+              canMoveToken={(token) => this.isMine(token)}
+              onTokenPointerDown={(event, token) => this.begin(event, token)} />
             <p className="ChakMaps-muted">Редактор для мастеров: можно перемещать фишки и назначать их владельцев. Перемещение игроками прямо в игровых сообщениях появится на следующем этапе v0.2.</p>
           </div>
           <div className="ChakMap-sidebar">
