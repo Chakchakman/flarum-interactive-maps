@@ -19,6 +19,7 @@ use ChakChakman\InteractiveMaps\Api\AssignTokenController;
 use ChakChakman\InteractiveMaps\Api\AttachMapToPostController;
 use ChakChakman\InteractiveMaps\Api\ShowPostMapController;
 use ChakChakman\InteractiveMaps\Api\DetachMapFromPostController;
+use ChakChakman\InteractiveMaps\Api\MovePostTokenController;
 use ChakChakman\InteractiveMaps\Models\MapEmbed;
 use Flarum\Post\Event\Deleted as PostDeleted;
 
@@ -85,5 +86,7 @@ return [
         ->patch('/chak-tokens/{id}/owner', 'chak.tokens.assign', AssignTokenController::class)
         ->post('/chak-map-embeds', 'chak.map-embeds.attach', AttachMapToPostController::class)
         ->get('/chak-map-embeds/{id}', 'chak.map-embeds.show', ShowPostMapController::class)
-        ->delete('/chak-map-embeds/{id}', 'chak.map-embeds.detach', DetachMapFromPostController::class),
+        ->delete('/chak-map-embeds/{id}', 'chak.map-embeds.detach', DetachMapFromPostController::class)
+        // A player can move only a token assigned to them on a visible, linked post.
+        ->post('/chak-map-embeds/{postId}/tokens/{tokenId}/move', 'chak.map-embeds.tokens.move', MovePostTokenController::class),
 ];
