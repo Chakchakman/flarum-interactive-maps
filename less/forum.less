@@ -65,3 +65,53 @@
 @media(max-width: 600px) {
   .ChakMapEmbed { padding: 8px; }
 }
+
+/* Alpha.5: fixed-size, internally zoomable viewport, shared by post and editor. */
+.ChakMap-board { width: 100%; min-width: 0; }
+.ChakMap-viewport {
+  width: 100%;
+  height: 560px;
+  max-width: 100%;
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #1e2731;
+  touch-action: pan-y;
+}
+.ChakMap-viewport > .ChakMap-canvas {
+  position: absolute;
+  aspect-ratio: auto;
+  max-width: none;
+  border-radius: 0;
+  touch-action: auto;
+  overflow: hidden;
+}
+.ChakMap-viewport.is-pannable { cursor: grab; }
+.ChakMap-viewport.is-pannable:active { cursor: grabbing; }
+.ChakMap-viewport .ChakMap-token.is-mine { cursor: grab; touch-action: none; }
+.ChakMap-viewport .ChakMap-token.is-dragging { cursor: grabbing; }
+.ChakMap-zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 0 3px;
+  font-size: 13px;
+}
+.ChakMap-zoom label { font-weight: 600; flex-shrink: 0; margin: 0; }
+.ChakMap-zoom input[type=range] {
+  flex: 1;
+  min-width: 40px;
+  max-width: 330px;
+  accent-color: #e25c7b;
+}
+.ChakMap-zoomValue { min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+.ChakMapEmbed .ChakMap-viewport { height: 460px; }
+.ChakMapEmbed .ChakMap-canvas { touch-action: auto; border-radius: 0; }
+@media (max-width: 800px) {
+  .ChakMap-viewport { height: 420px; }
+  .ChakMapEmbed .ChakMap-viewport { height: 300px; }
+}
+@media (max-width: 480px) {
+  .ChakMap-zoom { flex-wrap: wrap; gap: 6px; }
+  .ChakMap-zoom input[type=range] { max-width: none; }
+}
