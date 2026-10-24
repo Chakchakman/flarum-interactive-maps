@@ -39,6 +39,7 @@ test('player moves only their assigned token in a visible embed, including at 20
     await expect(embed.getByAltText('Owned token', { exact: true })).toHaveClass(/is-mine/);
     await expect(embed.getByAltText('Someone else token', { exact: true })).not.toHaveClass(/is-mine/);
     await api(player, 'GET', 'chak-maps', undefined, 403);
+    await api(player, 'GET', 'chak-map-users?prefix=smo', undefined, 403);
     await api(player, 'GET', 'chak-maps/' + mapId, undefined, 403);
     await api(player, 'POST', 'chak-map-embeds', { postId: Number(postId), mapId: Number(mapId) }, 403, 'chak-map-embeds');
     await api(player, 'POST', 'discussions', {

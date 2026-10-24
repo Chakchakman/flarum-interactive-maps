@@ -6,6 +6,7 @@ use Flarum\Api\Resource\PostResource;
 use Flarum\Api\Resource\DiscussionResource;
 use ChakChakman\InteractiveMaps\Api\ComposerMapAttachment;
 use ChakChakman\InteractiveMaps\Api\Middleware\AtomicComposerMap;
+use ChakChakman\InteractiveMaps\Api\SearchMapUsersController;
 use Flarum\Post\Post;
 use Flarum\Post\CommentPost;
 use Flarum\Api\Schema;
@@ -103,6 +104,7 @@ return [
         ->route('/maps/{id}', 'chak.map'),
 
     (new Extend\Routes('api'))
+        ->get('/chak-map-users', 'chak.maps.users.search', SearchMapUsersController::class)
         ->get('/chak-maps', 'chak.maps.index', ListMapsController::class)
         ->post('/chak-maps', 'chak.maps.create', CreateMapController::class)
         ->get('/chak-maps/{id}', 'chak.maps.show', ShowMapController::class)

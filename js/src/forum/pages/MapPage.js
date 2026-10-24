@@ -12,6 +12,8 @@ import { DebouncedGridSaveQueue } from '../gridSaveQueue.mjs';
 import { FALLBACK_IMAGE, gridMetrics, snapToCellCenter, validImageSize } from '../gridGeometry.mjs';
 import MapBoard from '../components/MapBoard';
 import { mapEmbedCode } from '../mapEmbedCode.mjs';
+import TokenOwnerInput from '../components/TokenOwnerInput';
+import AssignTokenOwnerModal from '../components/AssignTokenOwnerModal';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const GRID_FIELDS = ['gridSize', 'gridOffsetX', 'gridOffsetY', 'gridEnabled', 'snapToGrid'];
@@ -313,20 +315,14 @@ export default class MapPage extends Page {
     }
   }
 
-  async assign(token) {
-    const name = prompt(`Назначить владельца фишки «${token.name}».\nВведите username пользователя Flarum. Пусто — снять владельца.`, token.ownerUsername || '');
-    if (name === null) return;
-    try {
-      await app.request({
-        method: 'PATCH', url: endpoint(`chak-tokens/${token.id}/owner`),
-        body: resourceBody('chak-tokens', { ownerUsername: name.trim() }),
-      });
-      this.error = '';
-      await this.refresh();
-    } catch (error) {
-      this.error = displayError(error);
-      m.redraw();
-    }
+  assign(token) {
+    app.modal.show(AssignTokenOwnerModal, {
+      token,
+      onSaved: () => {
+        this.error = '';
+        void this.refresh();
+      },
+    });
   }
 
   view() {
@@ -367,7 +363,8 @@ export default class MapPage extends Page {
                 <div className="ChakMap-tokenRow" key={token.id}>
                   <img src={token.imageUrl} alt="" />
                   <div><b>{token.name}</b><small>{token.ownerUsername ? `@${token.ownerUsername}` : 'Без владельца'}</small></div>
-                  {this.canManage && <button className="Button Button--icon" title="Назначить пользователя" onclick={() => this.assign(token)}>✎</button>}
+                  {this.canManage && <button className="Button Button--icon" title="Назначить пользователя"
+                    aria-label={'Назначить владельца: ' + token.name} onclick={() => this.assign(token)}>✎</button>}
                 </div>
               ))}
             </section>
@@ -388,12 +385,13 @@ export default class MapPage extends Page {
                 </section>
                 <form className="ChakMaps-panel" onsubmit={this.addToken.bind(this)}>
                   <h3>Добавить фишку</h3>
-                  <label>Имя</label>
-                  <input className="FormControl" required value={this.tokenName} oninput={(e) => this.tokenName = e.target.value} placeholder="Сайлас МакГроу" />
-                  <label>Адрес PNG/JPG</label>
-                  <input className="FormControl" required value={this.tokenImageUrl} oninput={(e) => this.tokenImageUrl = e.target.value} />
-                  <label>Владелец (username в Flarum)</label>
-                  <input className="FormControl" value={this.tokenOwner} oninput={(e) => this.tokenOwner = e.target.value} placeholder="Можно оставить пустым" />
+                  <label for="chak-token-name">Имя</label>
+                  <input id="chak-token-name" className="FormControl" required value={this.tokenName} oninput={(e) => this.tokenName = e.target.value} placeholder="Сайлас МакГроу" />
+                  <label for="chak-token-image">Адрес PNG/JPG</label>
+                  <input id="chak-token-image" className="FormControl" required value={this.tokenImageUrl} oninput={(e) => this.tokenImageUrl = e.target.value} />
+                  <label for="chak-token-owner-new">Владелец (username в Flarum)</label>
+                  <TokenOwnerInput id="chak-token-owner-new" value={this.tokenOwner}
+                    onchange={(value) => this.tokenOwner = value} disabled={this.adding} />
                   <button className="Button Button--primary" type="submit" disabled={this.adding}>Добавить</button>
                 </form>
               </>

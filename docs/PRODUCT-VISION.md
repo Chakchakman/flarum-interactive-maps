@@ -65,3 +65,7 @@ If forum thread is private, ordinary members with no access to that discussion m
 ## Composer attachment (owner-approved 2026-10-24)
 
 Staff may also select a map while writing a new discussion or reply. Reuse the searchable picker; keep selection separate from content and allow changing/removing it before sending. Publishing must atomically create the post and its protected association after server-side manage/embed, map existence, post visibility and edit checks. A failed submission preserves text and selection, with no partial post to duplicate on retry. Discarded drafts create no association. The saved-post menu remains available, and markers in authored text stay inert. This explicitly extends the earlier saved-post-only UX.
+
+## Token owner suggestions (owner-approved 2026-10-24)
+
+While creating or reassigning a token, staff can search by the beginning of username after entering three characters, then choose a suggestion. Reassignment has explicit save/cancel. Empty selection removes only the owner, not the token. Server limits results and requires map management, does not return email/private profile fields, and independently validates assignment; ordinary players and guests cannot query this staff search. Native Flarum username rules remain unchanged.
