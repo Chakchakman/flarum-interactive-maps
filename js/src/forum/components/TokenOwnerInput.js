@@ -71,7 +71,9 @@ export default class TokenOwnerInput extends Component {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       const step = event.key === 'ArrowDown' ? 1 : -1;
-      this.active = (this.active + step + this.results.length) % this.results.length;
+      this.active = this.active < 0
+        ? (step > 0 ? 0 : this.results.length - 1)
+        : (this.active + step + this.results.length) % this.results.length;
     } else if (event.key === 'Enter' && this.active >= 0) {
       event.preventDefault();
       this.choose(this.results[this.active].username);

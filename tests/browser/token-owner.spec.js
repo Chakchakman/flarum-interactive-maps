@@ -50,6 +50,10 @@ test('staff owner search starts at three characters, limits results, and assigns
   expect(requests).toBe(0);
   await input.fill('tok');
   await expect(form.getByRole('option')).toHaveCount(10);
+  await input.press('ArrowUp');
+  await expect(form.getByRole('option').nth(9)).toHaveAttribute('aria-selected', 'true');
+  await input.press('Escape');
+  await expect(input).toHaveAttribute('aria-expanded', 'false');
   await input.fill(firstName);
   await form.getByRole('option', { name: '@' + firstName, exact: true }).click();
   await expect(input).toHaveValue(firstName);
