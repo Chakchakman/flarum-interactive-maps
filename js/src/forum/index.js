@@ -8,6 +8,7 @@ import PostControls from 'flarum/forum/utils/PostControls';
 import Button from 'flarum/common/components/Button';
 import { endpoint, displayError } from './api';
 import AttachMapModal from './components/AttachMapModal';
+import composerMap from './composerMap';
 
 export { default as extend } from './extend';
 
@@ -39,6 +40,7 @@ async function detachMapFromPost(post) {
 }
 
 app.initializers.add('chakchakman-interactive-maps', () => {
+  composerMap();
   // Post menu extensions use ItemList rather than inserting keyed/unkeyed
   // siblings into the Flarum post body (a previous Mithril crash).
   extend(PostControls, 'moderationControls', function (items, post) {

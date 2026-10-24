@@ -56,9 +56,16 @@ export default class AttachMapModal extends Modal {
   async attach(event) {
     event.preventDefault();
     const mapId = pickerMapId(this.maps, this.selectedId, this.query);
+    if (!mapId || this.loading || this.closed) return;
+    if (this.attrs.onSelect) {
+      const map = this.maps.find((item) => Number(item.id) === mapId);
+      this.attrs.onSelect({ id: mapId, title: map?.title || 'Карта #' + mapId });
+      this.hide();
+      return;
+    }
     const post = this.attrs.post;
-    const postId = post.id();
-    if (!mapId || !postId || this.loading || this.closed) return;
+    const postId = post?.id();
+    if (!postId) return;
     this.loading = true;
     this.error = '';
     try {

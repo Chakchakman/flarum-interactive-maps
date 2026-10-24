@@ -3,6 +3,9 @@
 use Flarum\Extend;
 use Flarum\Api\Resource\ForumResource;
 use Flarum\Api\Resource\PostResource;
+use Flarum\Api\Resource\DiscussionResource;
+use ChakChakman\InteractiveMaps\Api\ComposerMapAttachment;
+use ChakChakman\InteractiveMaps\Api\Middleware\AtomicComposerMap;
 use Flarum\Post\Post;
 use Flarum\Post\CommentPost;
 use Flarum\Api\Schema;
@@ -24,6 +27,28 @@ use ChakChakman\InteractiveMaps\Models\MapEmbed;
 use Flarum\Post\Event\Deleted as PostDeleted;
 
 return [
+    (new Extend\Middleware('api'))->add(AtomicComposerMap::class),
+
+    (new Extend\ApiResource(DiscussionResource::class))
+        ->fields(fn () => [
+            Schema\Integer::make('chakMapId')->visible(false)
+                ->writable(fn ($model, Context $context) => $context->creating())
+                ->set(function () {}),
+        ])
+        ->endpoint('create', fn ($endpoint) => $endpoint
+            ->before([ComposerMapAttachment::class, 'validate'])
+            ->after([ComposerMapAttachment::class, 'attach'])),
+
+    (new Extend\ApiResource(PostResource::class))
+        ->fields(fn () => [
+            Schema\Integer::make('chakMapId')->visible(false)
+                ->writable(fn ($model, Context $context) => $context->creating())
+                ->set(function () {}),
+        ])
+        ->endpoint('create', fn ($endpoint) => $endpoint
+            ->before([ComposerMapAttachment::class, 'validate'])
+            ->after([ComposerMapAttachment::class, 'attach'])),
+
     // Remove persisted links when a comment post is deleted.
     (new Extend\Event())
         ->listen(PostDeleted::class, function (PostDeleted $event) {

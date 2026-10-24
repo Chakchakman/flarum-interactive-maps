@@ -9,6 +9,7 @@ async function login(page, username = 'smokeadmin', password = 'Smoke-test-only-
   await page.locator('.LogInModal input[name="password"]').fill(password);
   await page.locator('.LogInModal button[type="submit"]').click();
   await expect(page.locator('.item-logIn')).toHaveCount(0);
+  await page.waitForFunction(() => !!window.app?.session?.user);
 }
 
 async function api(page, method, path, attributes, status = 200, type = 'chak-maps') {

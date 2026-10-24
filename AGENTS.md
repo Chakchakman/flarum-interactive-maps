@@ -11,7 +11,7 @@ This repository contains a **public Flarum 2.x extension** for interactive table
 Older parts of the README and ROADMAP may lag behind the latest project context. Check the exact PR and commit before making claims about releases.
 
 ## Product invariants
-- Staff with server-validated permissions manages the map catalog and attaches maps to **already saved, editable forum posts via the post menu**.
+- Staff with server-validated permissions manages the map catalog and attaches maps to **saved, editable posts via the post menu**, or selects a map while composing a new discussion/reply (owner-approved 2026-10-24). Draft selection is separate from authored text; the server must atomically create the post and its authorized association.
 - An exported marker such as `[interactive-map id=9]` is an inert identifier for the attach dialog, NOT active BBCode, HTML, or an iframe.
 - Detaching removes only the post association; never the underlying map or tokens.
 - Players can move only their assigned tokens within authorized visible post embeds; validate ownership, authentication and discussion visibility **on the PHP server**.

@@ -61,3 +61,7 @@ Cross-account test matrix:
 | Administrator | Yes | Yes | Yes | Yes | Yes |
 
 If forum thread is private, ordinary members with no access to that discussion must see **no** map data even if they guess its ID.
+
+## Composer attachment (owner-approved 2026-10-24)
+
+Staff may also select a map while writing a new discussion or reply. Reuse the searchable picker; keep selection separate from content and allow changing/removing it before sending. Publishing must atomically create the post and its protected association after server-side manage/embed, map existence, post visibility and edit checks. A failed submission preserves text and selection, with no partial post to duplicate on retry. Discarded drafts create no association. The saved-post menu remains available, and markers in authored text stay inert. This explicitly extends the earlier saved-post-only UX.

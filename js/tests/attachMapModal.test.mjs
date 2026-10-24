@@ -37,6 +37,18 @@ function setup(request) {
   return { modal, changes };
 }
 const event = { preventDefault() {} };
+test('draft picker chooses metadata without requiring a post or sending an attachment', async () => {
+  let requests = 0;
+  let chosen;
+  const { modal, changes } = setup(() => { requests++; });
+  modal.attrs = { onSelect: (map) => { chosen = map; } };
+  await modal.attach(event);
+  assert.equal(chosen.id, 9);
+  assert.equal(chosen.title, 'Map');
+  assert.equal(requests, 0);
+  assert.equal(changes.length, 0);
+  assert.equal(modal.hidden, true);
+});
 test('attachment sends the post-scoped body once and updates post only after success', async () => {
   let finish;
   const calls = [];

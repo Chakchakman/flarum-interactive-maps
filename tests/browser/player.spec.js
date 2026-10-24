@@ -41,6 +41,10 @@ test('player moves only their assigned token in a visible embed, including at 20
     await api(player, 'GET', 'chak-maps', undefined, 403);
     await api(player, 'GET', 'chak-maps/' + mapId, undefined, 403);
     await api(player, 'POST', 'chak-map-embeds', { postId: Number(postId), mapId: Number(mapId) }, 403, 'chak-map-embeds');
+    await api(player, 'POST', 'discussions', {
+      title: 'Forged draft map ' + Date.now(), content: 'Must not publish',
+      chakMapId: Number(mapId),
+    }, 403, 'discussions');
     await api(player, 'POST', 'chak-tokens/' + own.data.id + '/move', { x: 0.1, y: 0.1 }, 403, 'chak-tokens');
     // Body fields cannot turn another token into this player's token.
     await api(player, 'POST', 'chak-map-embeds/' + postId + '/tokens/' + other.data.id + '/move', {

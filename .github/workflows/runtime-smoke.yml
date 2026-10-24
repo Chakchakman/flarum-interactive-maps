@@ -2,7 +2,7 @@ name: Flarum runtime smoke
 on:
   pull_request:
   push:
-    branches: ['fix/flarum-runtime-smoke']
+    branches: ['fix/flarum-runtime-smoke', 'feature/composer-map-attachment', 'feature/token-owner-search']
   workflow_dispatch:
 permissions:
   contents: read
@@ -29,7 +29,7 @@ jobs:
         with:
           php-version: '8.3'
           tools: composer:v2
-          extensions: mbstring, xml, dom, curl, gd, pdo_mysql, zip
+          extensions: mbstring, xml, dom, curl, gd, pdo_mysql, pdo_sqlite, zip
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -51,6 +51,7 @@ jobs:
           JSON
           php flarum install --file="$RUNNER_TEMP/install.json"
           php flarum cache:clear
+          php "$GITHUB_WORKSPACE/tests/composerTransactionTest.php" "$RUNNER_TEMP/forum/vendor/autoload.php"
           php -S 127.0.0.1:8888 -t public > "$RUNNER_TEMP/forum-server.log" 2>&1 &
       - name: Install browser
         working-directory: tests/browser

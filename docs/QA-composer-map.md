@@ -1,0 +1,11 @@
+# Composer map attachment — owner-requested addition
+
+Owner requested this on 2026-10-24 after confirming the Alpha.7 picker. It explicitly extends saved-post-only UX; markers remain inert and the post-menu action remains available. No schema migration.
+
+Staff with both manage/embed may choose/change/remove a map in a new discussion or reply. Selection lives in the composer's fields, separate from title/content. Opening/cancelling the picker never publishes or creates an association. Submission sends optional chakMapId in the normal Flarum request. API create hooks validate rights and map existence, create the association only for the saved editable visible comment, and serialize the map hint. A request-scoped database transaction rolls back publication on exceptions or an error response. Ordinary requests without a map keep the existing pipeline.
+
+Flarum 2 composer modules are lazy: hooks register via module-path strings using the supported extend/override API, not eager class imports. Choosing only a map counts as a draft change for discard confirmation; ordinary Flarum content validation remains.
+
+Local checks: 7 browser scenarios passed (including the five Alpha.7 regressions); 40 JS tests and production build; Composer validation, PHP syntax and 27 access assertions; 4 in-memory SQLite transaction cases (success, error response after insertion, thrown association error after insertion, ordinary request). Browser tests verify actual discussion/reply attachment with BBCode/reload, cancellation preserving prior choice, missing-map rejection without publishing, removing a failed choice, and forged member requests denied. The SQLite suite runs in the runtime workflow with the isolated Flarum autoloader.
+
+Manual acceptance pending: normal topic/reply/BBCode first; choose a map before sending a new topic and reply, cancel/change/remove before sending, reload after publication; verify invalid IDs preserve the draft and normal submission works after removing the choice. Test privileged GM permissions, narrow viewport and two accounts before release. Do not alter the owner's original map/post association. No release dist is committed before acceptance; use the fresh CI test artifact or a local build.
