@@ -24,12 +24,12 @@
 .ChakMap-stage { min-width: 0; }
 .ChakMap-canvas { position: relative; width: 100%; aspect-ratio: 1280 / 853; background-position: center; background-repeat: no-repeat; background-size: 100% 100%; background-color: #1e2731; border-radius: 12px; overflow: hidden; user-select: none; touch-action: none; }
 .ChakMap-grid { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
-.ChakMap-token { position: absolute; width: clamp(28px, 4.5vw, 62px); height: clamp(28px, 4.5vw, 62px); object-fit: contain; transform: translate(-50%, -50%); cursor: default; filter: drop-shadow(0 2px 4px #111); z-index: 3; }
+.ChakMap-token { position: absolute; width: clamp(28px, 4.5vw, 62px); height: clamp(28px, 4.5vw, 62px); object-fit: cover; object-position: center; border-radius: 50%; transform: translate(-50%, -50%); cursor: default; filter: drop-shadow(0 2px 4px #111); z-index: 3; }
 .ChakMap-token.is-mine { cursor: grab; outline: 2px solid #baf0e1; border-radius: 50%; }
 .ChakMap-token.is-dragging { cursor: grabbing; z-index: 10; filter: drop-shadow(0 0 10px #65e7d6); }
 .ChakMap-sidebar { min-width: 0; }
 .ChakMap-tokenRow { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(128,128,128,.18); padding-bottom: 7px; }
-.ChakMap-tokenRow img { width: 36px; height: 36px; object-fit: contain; }
+.ChakMap-tokenRow img { width: 36px; height: 36px; object-fit: cover; object-position: center; border-radius: 50%; }
 .ChakMap-tokenRow > div { flex: 1; min-width: 0; }
 .ChakMap-tokenRow b, .ChakMap-tokenRow small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ChakMap-tokenRow small { opacity: .65; }

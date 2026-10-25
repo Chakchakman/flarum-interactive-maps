@@ -2,7 +2,7 @@ name: Flarum runtime smoke
 on:
   pull_request:
   push:
-    branches: ['fix/flarum-runtime-smoke', 'feature/composer-map-attachment', 'feature/token-owner-search']
+    branches: ['fix/flarum-runtime-smoke', 'feature/composer-map-attachment', 'feature/token-owner-search', 'feature/circular-tokens', 'feature/owner-avatars', 'feature/grid-style']
   workflow_dispatch:
 permissions:
   contents: read

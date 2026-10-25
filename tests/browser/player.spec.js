@@ -38,6 +38,16 @@ test('player moves only their assigned token in a visible embed, including at 20
     await expect(post.locator('.item-chakAttachMap, .item-chakDetachMap')).toHaveCount(0);
     await expect(embed.getByAltText('Owned token', { exact: true })).toHaveClass(/is-mine/);
     await expect(embed.getByAltText('Someone else token', { exact: true })).not.toHaveClass(/is-mine/);
+    for (const name of ['Owned token', 'Someone else token']) {
+      const style = await embed.getByAltText(name, { exact: true }).evaluate(img => {
+        const css = getComputedStyle(img);
+        const rect = img.getBoundingClientRect();
+        return { radius: css.borderRadius, fit: css.objectFit, width: rect.width, height: rect.height };
+      });
+      expect(style.radius).toBe('50%');
+      expect(style.fit).toBe('cover');
+      expect(style.width).toBeCloseTo(style.height, 1);
+    }
     await api(player, 'GET', 'chak-maps', undefined, 403);
     await api(player, 'GET', 'chak-map-users?prefix=smo', undefined, 403);
     await api(player, 'GET', 'chak-maps/' + mapId, undefined, 403);

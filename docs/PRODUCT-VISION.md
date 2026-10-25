@@ -69,3 +69,7 @@ Staff may also select a map while writing a new discussion or reply. Reuse the s
 ## Token owner suggestions (owner-approved 2026-10-24)
 
 While creating or reassigning a token, staff can search by the beginning of username after entering three characters, then choose a suggestion. Reassignment has explicit save/cancel. Empty selection removes only the owner, not the token. Server limits results and requires map management, does not return email/private profile fields, and independently validates assignment; ordinary players and guests cannot query this staff search. Native Flarum username rules remain unchanged.
+
+## Token presentation (requested 2026-10-25)
+
+Token images fill a centered circular viewport without stretching. Owned/unowned tokens and editor/sidebar/post views share the presentation; original images, board geometry, stored coordinates and movement permissions remain unchanged. User owner suggestions should show the user's native Flarum avatar, with its normal fallback when absent (explicitly confirmed by the owner).
