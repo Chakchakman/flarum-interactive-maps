@@ -53,6 +53,7 @@ jobs:
           php flarum cache:clear
           php "$GITHUB_WORKSPACE/tests/composerTransactionTest.php" "$RUNNER_TEMP/forum/vendor/autoload.php"
           php "$GITHUB_WORKSPACE/tests/gridStyleMigrationTest.php" "$RUNNER_TEMP/forum/vendor/autoload.php"
+          php "$GITHUB_WORKSPACE/scripts/Migrate-GridStyle.php" --approved-after-backup
           php -S 127.0.0.1:8888 -t public > "$RUNNER_TEMP/forum-server.log" 2>&1 &
       - name: Install browser
         working-directory: tests/browser
