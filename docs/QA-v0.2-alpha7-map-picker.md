@@ -41,3 +41,10 @@ Run `cd tests/browser && npm ci && npx playwright install --with-deps chromium &
 Local outcome: **5/5 browser scenarios passed, 39/39 JS tests passed, 27 PHP permission assertions passed; Composer strict validation, PHP syntax and production builds passed.** Owner acceptance and the CI result for the new commit remain separate gates.
 
 CI confirmation for code commit `f2c5fdaf541e68993db9b7988cf29a60d6e3293b`: [Extension CI 40040296018](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40040296018) and [Flarum runtime smoke 40040296019](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40040296019) both **Success**. Windows checks passed in GitHub CI. The subsequent base synchronization changes documentation/agent instructions only; owner acceptance and release approval remain pending.
+
+
+## Current acceptance update — 2026-10-25
+
+The sections above describe the original picker-only scope and historical five-scenario suite. The cumulative code baseline is now `28bff5e`, with 43 JS tests, 11 real-Flarum browser scenarios and successful PHP/CI checks. Composer selection, owner search and presentation additions have separate QA documents in this directory; the grid-style addition includes an approved additive migration, actually run on the owner's lab after a fresh backup.
+
+Owner confirmed picker attachment/thumbnails/search/highlight/cancel, composer attachment and draft cancellation, owner suggestions for creation/reassignment, circular tokens, avatars, grid color/thickness, and the supplied two-account player checklist: own movement allowed, other movement denied, position survives reload, map/grid/owner controls unavailable to the player. This updates the earlier pending owner statuses for those named actions only. Explicit GM grants, private-discussion integrations, multiple embeds, narrow layouts/themes and final release review remain separate gates. No release/merge authorization; no need to repeat passed manual cases without a regression reason.

@@ -1,150 +1,57 @@
-> **Разработка v0.2.0-alpha.1:** экспериментальная ветка `feature/v0.2-staff-map-catalog`. Каталог карт теперь закрыт для всех, кроме администраторов и групп с разрешением `chakchakman-interactive-maps.map.manage`; соответствующее право появляется в админ-панели Flarum 2. Встроенные в сообщения карты **ещё не готовы**. В этой alpha игроки временно не могут передвигать фишки через старый URL API. Не устанавливайте её на действующий игровой форум. Рабочая тестовая версия — `fix/beta7-jsonapi-compat`. Перед переключениями сохраняйте резервные копии и пересобирайте JS.
+# Interactive Maps для Flarum 2.x
 
-# Interactive Maps v0.1 — первый рабочий этап
+Интерактивные карты для настольных и ролевых игр прямо в сообщениях форума. Управляющий готовит карту и назначает фишки, игрок перемещает свою фишку в доступном ему обсуждении.
 
-Разработано для **Flarum 2.x** и локальной Docker-среды `flarum-map-lab`.
+**Статус на 25 октября 2026:** разработка v0.2 / Alpha.7. На стенде владельца проверены выбор и прикрепление карты, работа с черновиком, поиск владельцев фишек, круглые изображения, аватары, цвет/толщина сетки и ограничения игрока. Это проверенная экспериментальная сборка, не опубликованный стабильный релиз. Решение о выпуске и слиянии PR принимается отдельно.
 
-## Что есть в версии 0.1
+## Возможности
 
-- Нативная страница `/maps`, открывается внутри Flarum.
-- Список карт + создание карты администратором.
-- Изображение фона по URL (для лаборатории — `http://localhost:8081/map.jpg`).
-- Настраиваемая квадратная сетка: размер, смещения, включение, привязка фишек.
-- Создание фишек по URL изображения.
-- Привязка фишки к `username` зарегистрированного пользователя Flarum.
-- Администратор может перемещать любую фишку, игрок — только назначенную ему.
-- Проверка разрешения и координат выполняется **на PHP-сервере**, не в браузере.
-- Позиции хранятся в MariaDB в таблице `chak_tokens`.
-- Каждые 5 секунд другие открытые вкладки обновляют расположение фишек.
+- Закрытый каталог `/maps` для администраторов и групп с разрешением управления картами.
+- Карты внутри сообщений с серверной проверкой прав и видимости обсуждения.
+- Прикрепление через меню сохранённого поста или выбор карты при создании темы/ответа; отмена выбора не меняет текст.
+- Окно выбора с миниатюрами, поиском и обработкой ошибок. Открепление удаляет только связь с постом.
+- Фон и изображения фишек по URL, круглая обрезка изображений без искажения пропорций.
+- Поиск владельца по началу username от трёх символов, аватары в списках создания и переназначения фишки.
+- Квадратная сетка: размер, смещения, привязка, цвет и толщина 0,5–5 px.
+- Ограниченная область просмотра, ползунок масштаба и панорамирование в редакторе и сообщении.
+- Игрок перемещает только свою назначенную фишку; права и координаты проверяются PHP-сервером.
 
-**Пока нет:** загрузки файлов через UI, произвольных фигур/гексов, zoom/pan, истории действий, продвинутых групповых прав, тумана войны. Карты пока публичны для всех посетителей форума. **Не размещай секретные карты в этой версии.** Управление картами доступно только администратору.
+Маркер `[interactive-map id=9]` — инертный идентификатор для окна прикрепления. Он не превращается в активный BBCode или iframe и не изменяет обычный текст сообщения.
 
-## Установка на Windows — PowerShell
+## Проверенная сборка
 
-Убедись, что Docker контейнеры `app`, `db`, `prototype` работают:
+Код: [`28bff5e`](https://github.com/Chakchakman/flarum-interactive-maps/commit/28bff5eaa52526f3b4f67fa843bde112418edf9d), ветка `feature/grid-style`, включающая отдельные ветки composer, поиска пользователей, круглых фишек и аватаров. Последующие изменения документации не меняют этот код. Поля version в manifest не обозначают новый опубликованный релиз.
+
+| Статус | Результат |
+| --- | --- |
+| Реализовано | Перечисленные возможности в экспериментальных ветках |
+| Автоматически проверено | 43 JS-теста, 11 браузерных сценариев на Flarum 2, PHP-проверки; оба CI успешны |
+| Проверено владельцем | Picker/отмена, composer, поиск владельца, три визуальных дополнения, своя/чужая фишка и сохранение позиции, недоступность управления игроку |
+| Обновление БД стенда | Миграция стиля сетки выполнена после свежей копии; количество карт, фишек и связей сохранено |
+| Принято к выпуску | Нет; оставшиеся проверки и решение о выпуске — отдельно |
+
+Результаты CI: [Flarum runtime smoke](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40169141415), [Extension CI](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40169141445). Полная история и ограничения: [PROJECT-CONTEXT](docs/PROJECT-CONTEXT.md).
+
+## Разработка и локальная проверка
+
+Требуется Flarum 2.x. Используйте отдельный тестовый форум и синтетические данные. Для существующей Windows Docker-лаборатории из папки с `docker-compose.yml`:
 
 ```powershell
 docker compose ps
+docker compose run --rm node npm ci
+docker compose run --rm node npm run check
 ```
 
-1. Перемести скачанный архив `flarum-interactive-maps-v0.1.zip` в папку `flarum-map-lab\flarum-map-lab` — рядом с `docker-compose.yml`.
+Команды предполагают, что сервис Node монтирует `extension` и работает из её каталога `js`. При ошибке остановитесь. Сборка изменяет локальные `js/dist`; проверяйте `git status` перед переключением ветки. PHP/JS-проверки лаборатории также доступны через [Test-Lab.ps1](scripts/Test-Lab.ps1), подробности — [DEVELOPMENT](docs/DEVELOPMENT.md).
 
-2. Из этой папки в PowerShell:
+Исходный архив ветки может содержать прежние tracked dist: для тестирования нужна новая сборка либо CI-артефакт точного SHA. CI-артефакт не является релизом. Не распаковывайте архив поверх работающего форума без копии и проверки изменений.
 
-```powershell
-Expand-Archive ".\flarum-interactive-maps-v0.1.zip" -DestinationPath ".\extension" -Force
-```
+**Обновление существующей БД:** сначала свежая резервная копия и review миграций. Не запускайте глобальный `flarum migrate` как обычное средство очистки кэша. Согласованное обновление двух полей сетки и точечный CLI helper описаны в [QA-grid-style](docs/QA-grid-style.md); уже обновлённому стенду повторная миграция не требуется. Сохраняйте резервную Alpha.6 `backup/alpha6-working-20261024` / `5c846e2`.
 
-**Важно:** в `.\extension\` теперь должны быть файлы `composer.json`, `extend.php`, `js\package.json` и папки `src`, `migrations`. **Не создавай вложенную папку `extension\flarum-interactive-maps-v0.1`**.
+## Что дальше
 
-3. Подключи папку расширения к Composer как локальный пакет (только один раз):
+1. Завершить проверки выпуска v0.2: явно выданные права GM, видимость постов/обсуждений, несколько встроенных карт, узкий экран и темы оформления, воспроизводимая установка/обновление.
+2. После приёмки v0.2 — v0.3: синхронизация фишек между клиентами и обработка конфликтующих перемещений. Сначала проверить текущее обновление данных и согласовать поведение конфликтов; присутствие пользователей остаётся частью плана, не реализованной возможностью.
+3. Далее: измерения и маркеры; загрузка изображений и слои; туман войны и условия видимости. Масштабирование/панорамирование уже перенесены вперёд и не считаются новой будущей задачей.
 
-```powershell
-docker compose exec app composer config repositories.local path "packages/*"
-```
-
-4. Установи локальный пакет через Composer:
-
-```powershell
-docker compose exec app composer require "chakchakman/flarum-interactive-maps:*@dev" --no-interaction
-```
-
-Если Composer не нашёл пакет, убедись, что `extension/composer.json` присутствует, а `app` видит его через смонтированную папку `/var/www/flarum/packages/map-correct`:
-
-```powershell
-docker compose exec app ls -la /var/www/flarum/packages/map-correct
-```
-
-5. Собери JS frontend. Команды ниже используют отдельный контейнер Node из лаборатории; устанавливать Node.js в Windows не нужно:
-
-```powershell
-docker compose run --rm node npm install
-```
-
-```powershell
-docker compose run --rm node npm run build
-```
-
-6. Очисти кеш Flarum:
-
-```powershell
-docker compose exec app php flarum cache:clear
-```
-
-7. Открой **http://localhost:8080/admin** → Extensions → **Interactive Maps (DEV)** → Enable.
-
-8. Перейди на **http://localhost:8080/maps**.
-
-## Мини-тест функциональности
-
-1. Администратор создаёт карту «Evil West Test», оставив предложенный фон `http://localhost:8081/map.jpg`.
-2. В редакторе карты добавляет фишку, например:
-   - Имя: `Сайлас МакГроу`
-   - Адрес изображения: `http://localhost:8081/percy/silas.png`
-   - Владелец: свой `username` Flarum (или имя другого тестового пользователя).
-3. Двигает фишку мышью.
-4. Обновляет страницу — новая позиция должна сохраняться.
-5. Меняет размер сетки и смещение; обновляет страницу — настройки должны сохраняться.
-6. Проверяет во втором браузере с другим аккаунтом Flarum: назначенный игрок может двигать свою фишку, чужие не двигаются.
-
-## Диагностика
-
-Если страница пустая либо выдаёт ошибку 500:
-
-```powershell
-docker compose logs --tail=100 app
-```
-
-Логи PHP / Flarum:
-
-```powershell
-docker compose exec app sh -c "ls -l storage/logs; tail -n 80 storage/logs/*.log"
-```
-
-Если после изменения JS не видны изменения:
-
-```powershell
-docker compose run --rm node npm run build
-docker compose exec app php flarum cache:clear
-```
-
-Если изменяли PHP/миграции:
-
-```powershell
-docker compose exec app php flarum migrate
-docker compose exec app php flarum cache:clear
-```
-
-## Как устроен код
-
-```text
-extension/
-├── composer.json          # имя и настройки Composer-пакета
-├── extend.php             # регистрация frontend и API-маршрутов
-├── migrations/            # таблицы chak_maps и chak_tokens
-├── src/
-│   ├── Api/               # серверные обработчики с авторизацией
-│   └── Models/            # модели MariaDB
-├── js/
-│   ├── src/forum/
-│   │   ├── extend.js       # маршруты /maps и /maps/:id
-│   │   └── pages/          # визуальный интерфейс карт
-│   ├── package.json
-│   └── webpack.config.js
-└── less/forum.less        # стили интерфейса
-```
-
-Этот архив **не обновляет старый `map-correct`** и **не изменяет существующие сообщения форума**. Для теста используются изображения, которые Nginx уже отдаёт на 8081. Firebase из прототипа не используется.
-
-## Следующий этап
-
-Настройка редактора: загрузка своих фонов и токенов, список пользователей с автопоиском, роли «мастер» и «игрок», панорамирование и масштабирование карты.
-
-## Floxum audit fixes (draft)
-
-This branch addresses Floxum beta.1 findings #1, #2, #3, #6, and #7:
-- Removed hardcoded localhost image URLs and development-only UI note.
-- Added eager-loaded token owner relationship to eliminate per-token User::find() queries.
-- Restricted list/show map APIs to authenticated users via Flarum's assertRegistered().
-
-**Compatibility:** Public maps are no longer accessible to anonymous visitors. Already stored map and token data remain unchanged. Existing simple JSON responses remain for this patch; JSON:API migration and grid dimension refactor are still pending and should be implemented and tested separately. The compiled js/dist/forum.js must be regenerated before releasing this branch, and the PHP/JS functionality must be exercised in the local Flarum test forum. This is not a production release.
+[Roadmap](ROADMAP.md) · [Модель продукта и разрешений](docs/PRODUCT-VISION.md) · [QA Alpha.7](docs/QA-v0.2-alpha7-map-picker.md) · [Правила работы агента](AGENTS.md)

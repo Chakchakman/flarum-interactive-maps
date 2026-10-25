@@ -3,7 +3,20 @@
 Status: working plan, agreed 2026-10-20. Versions are milestones, not release dates.
 **Rule:** no release is tagged until its acceptance checks pass on Flarum 2.x. No schema migrations without a database backup.
 
-## Stage 1 — Reliability of the first public release
+## Current priorities — 2026-10-25
+
+The owner passed the supplied Alpha.7 picker/composer/owner-search, presentation and player-permission checks on code `28bff5e`. Grid schema upgrade completed after a fresh backup. Automatic baseline: 43 JS tests, 11 browser scenarios and PHP/CI checks. This is lab acceptance of the named scenarios, not release/merge authorization.
+
+| Order | Work | Completion evidence |
+| --- | --- | --- |
+| 1 | Finish v0.2 release gates | Explicit GM grants, visibility/private-discussion integrations, multiple embeds, narrow/light/dark layouts, reproducible install/upgrade; distinguish automated and owner results |
+| 2 | Prepare v0.2 review | Current README/context/QA, exact tested source and built assets, review existing/stacked PRs; owner decides release/merge |
+| 3 | Plan v0.3 client synchronization | Audit existing refresh behavior; specify and test two-client convergence, stale updates and competing moves; presence remains provisional |
+| 4 | Later agreed milestones | Measurement/markers, image upload/layers, fog of war and session features; no expansion without scope agreement |
+
+Zoom/pan were pulled forward and are implemented in both contexts; do not schedule their initial implementation again. Token circles, user avatars, owner autocomplete and grid styles are implemented and owner-tested, not future features. No new large feature is started by recording acceptance.
+
+## Historical stage 1 — Reliability of the first public release
 
 | Version | Scope | Release gate |
 | --- | --- | --- |
@@ -31,7 +44,7 @@ Status: working plan, agreed 2026-10-20. Versions are milestones, not release da
 
 - **v0.2.0:** **priority feature — embed interactive maps in discussion posts**, staff-only map catalog and configurable manage/embed permissions, server-validated per-post/per-discussion visibility, player move-own-token inside the post. This supersedes the earlier v0.7 embedding schedule.
 - **v0.3.0:** multi-client token sync; collision/conflict handling and presence.
-- **v0.4.0:** pan, zoom in **both embedded post maps and the staff map editor**, measurement tools and map markers.
+- **v0.4.0:** measurement tools and map markers; pan/zoom in the editor and posts were pulled forward and are implemented.
 - **v0.5.0:** image upload, map editor, overlays and layers.
 - **v0.6.0:** fog of war, hidden tokens, visibility and conditions.
 - **v0.7.0:** more advanced game sessions, scoped GM assignments and other Flarum integrations.
@@ -59,7 +72,7 @@ Status: working plan, agreed 2026-10-20. Versions are milestones, not release da
 5. Versioned releases are immutable tags. Store known issues and test results in the PR before merging.
 6. **Never treat a successful JS build as proof that the extension works inside Flarum.**
 
-## Current baseline
+## Historical beta baseline
 
 - Recovery branch: `recovery/last-working-audit-build` (commit `821d761`).
 - Current beta.2 branch: `fix/beta2-core-stability`, initially based on recovery.
