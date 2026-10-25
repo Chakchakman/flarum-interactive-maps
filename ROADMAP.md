@@ -69,3 +69,7 @@ Status: working plan, agreed 2026-10-20. Versions are milestones, not release da
 ### Owner-approved additions (2026-10-24)
 
 Before further v0.3 work: add selection of a map in the new-discussion/reply composer, with atomic server publication and existing post-menu fallback; add staff-only token-owner autocomplete after three characters. Keep separate focused branches/PRs and real Flarum browser regression gates. These additions do not authorize active map BBCode, schema changes or a release.
+
+### Requested presentation work (2026-10-25)
+
+Focused follow-ups: circular token image fit; native user avatars in owner suggestions (confirmed meaning); per-map grid color/thickness. Preserve coordinates/permissions and verified composer/picker behavior. The style persistence migration must be reviewed and explicitly approved with a fresh DB backup before any existing forum upgrade. These requests do not authorize a release or automatic PR merges.

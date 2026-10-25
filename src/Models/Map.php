@@ -12,6 +12,7 @@ class Map extends AbstractModel
     protected $casts = [
         'grid_enabled' => 'boolean',
         'snap_to_grid' => 'boolean',
+        'grid_line_width' => 'float',
     ];
 
     public function tokens()

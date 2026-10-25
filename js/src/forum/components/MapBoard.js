@@ -1,5 +1,6 @@
 import Component from 'flarum/common/Component';
 import { viewportLayout, clampZoom, DEFAULT_ZOOM } from '../mapViewport.mjs';
+import { gridStyle, GRID_OPACITY } from '../gridStyle.mjs';
 
 let patternSequence = 0;
 
@@ -143,6 +144,7 @@ export default class MapBoard extends Component {
 
   view() {
     const { map, metrics, gridPatternId, canMoveToken, onTokenPointerDown, readOnly } = this.attrs;
+    const { gridColor, gridLineWidth } = gridStyle(map);
     const patternId = gridPatternId || this.patternId;
     const layout = this.currentLayout();
     if (layout.ready) {
@@ -176,7 +178,7 @@ export default class MapBoard extends Component {
                     x={metrics.offsetX} y={metrics.offsetY}
                     width={metrics.cell} height={metrics.cell}>
                     <path d={'M 0 0 L ' + metrics.cell + ' 0 M 0 0 L 0 ' + metrics.cell}
-                      fill="none" stroke="rgba(255,255,255,.48)" strokeWidth="1" />
+                      fill="none" stroke={gridColor} stroke-opacity={GRID_OPACITY} stroke-width={gridLineWidth} />
                   </pattern>
                 </defs>
                 <rect x="0" y="0" width={metrics.width} height={metrics.height}

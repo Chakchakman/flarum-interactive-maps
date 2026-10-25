@@ -51,6 +51,7 @@ test('player moves only their assigned token in a visible embed, including at 20
     await api(player, 'GET', 'chak-maps', undefined, 403);
     await api(player, 'GET', 'chak-map-users?prefix=smo', undefined, 403);
     await api(player, 'GET', 'chak-maps/' + mapId, undefined, 403);
+    await api(player, 'PATCH', 'chak-maps/' + mapId, { gridColor: '#00ff00', gridLineWidth: 3 }, 403);
     await api(player, 'POST', 'chak-map-embeds', { postId: Number(postId), mapId: Number(mapId) }, 403, 'chak-map-embeds');
     await api(player, 'POST', 'discussions', {
       title: 'Forged draft map ' + Date.now(), content: 'Must not publish',

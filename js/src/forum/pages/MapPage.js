@@ -14,9 +14,10 @@ import MapBoard from '../components/MapBoard';
 import { mapEmbedCode } from '../mapEmbedCode.mjs';
 import TokenOwnerInput from '../components/TokenOwnerInput';
 import AssignTokenOwnerModal from '../components/AssignTokenOwnerModal';
+import { gridStyle } from '../gridStyle.mjs';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-const GRID_FIELDS = ['gridSize', 'gridOffsetX', 'gridOffsetY', 'gridEnabled', 'snapToGrid'];
+const GRID_FIELDS = ['gridSize', 'gridOffsetX', 'gridOffsetY', 'gridEnabled', 'snapToGrid', 'gridColor', 'gridLineWidth'];
 const gridSettings = (map) => Object.fromEntries(GRID_FIELDS.map((key) => [key, map[key]]));
 let nextPatternId = 0;
 
@@ -163,6 +164,7 @@ export default class MapPage extends Page {
     try {
       const result = await app.request({ method: 'GET', url: endpoint(`chak-maps/${this.mapId}`) });
       const loaded = normalizeMapResponse(result);
+      Object.assign(loaded, gridStyle(loaded));
       if (!Array.isArray(loaded.tokens)) {
         throw new Error(`Некорректный ответ API для карты #${this.mapId}`);
       }
@@ -372,6 +374,12 @@ export default class MapPage extends Page {
               <>
                 <section className="ChakMaps-panel">
                   <h3>Настройки сетки</h3>
+                  <label for="chak-grid-color">Цвет сетки</label>
+                  <input id="chak-grid-color" type="color" value={map.gridColor}
+                    oninput={(e) => this.saveGrid({ gridColor: e.target.value })} />
+                  <label for="chak-grid-line-width">Толщина сетки: {map.gridLineWidth} px</label>
+                  <input id="chak-grid-line-width" type="range" min="0.5" max="5" step="0.5"
+                    value={map.gridLineWidth} oninput={(e) => this.saveGrid({ gridLineWidth: Number(e.target.value) })} />
                   <p className="ChakMaps-muted">Сетка рассчитана в пикселях исходного изображения ({metrics.width} × {metrics.height}). Изменения отправляются через 400 мс после настройки.</p>
                   {this.imageStatus === 'error' && <p className="ChakMaps-error">Не удалось определить размеры фона. Проверь URL изображения: привязка к сетке временно отключена.</p>}
                   <label>Размер клетки: {map.gridSize} px</label>

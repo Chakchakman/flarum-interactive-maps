@@ -114,6 +114,8 @@ abstract class ApiController
             'backgroundUrl' => $map->background_url,
             'creatorId' => $map->creator_id,
             'gridSize' => (int) $map->grid_size,
+            'gridColor' => $map->grid_color ?? \ChakChakman\InteractiveMaps\Models\GridStyle::COLOR,
+            'gridLineWidth' => (float) ($map->grid_line_width ?? \ChakChakman\InteractiveMaps\Models\GridStyle::WIDTH),
             'gridOffsetX' => (int) $map->grid_offset_x,
             'gridOffsetY' => (int) $map->grid_offset_y,
             'gridEnabled' => (bool) $map->grid_enabled,

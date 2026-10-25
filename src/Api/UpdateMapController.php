@@ -3,6 +3,7 @@
 namespace ChakChakman\InteractiveMaps\Api;
 
 use ChakChakman\InteractiveMaps\Models\Map;
+use ChakChakman\InteractiveMaps\Models\GridStyle;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -15,6 +16,14 @@ class UpdateMapController extends ApiController implements RequestHandlerInterfa
         $map = Map::find($this->id($request));
         if (!$map) return $this->error('Карта не найдена', 404);
         $data = $this->data($request);
+        if (array_key_exists('gridColor', $data)) {
+            if (!GridStyle::validColor($data['gridColor'])) return $this->error('Цвет сетки: #RRGGBB.');
+            $map->grid_color = strtolower($data['gridColor']);
+        }
+        if (array_key_exists('gridLineWidth', $data)) {
+            if (!GridStyle::validWidth($data['gridLineWidth'])) return $this->error('Толщина сетки: от 0.5 до 5 px, шаг 0.5.');
+            $map->grid_line_width = $data['gridLineWidth'];
+        }
 
         if (array_key_exists('title', $data)) {
             $title = trim((string) $data['title']);

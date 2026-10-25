@@ -40,6 +40,8 @@ jobs:
         run: php tests/postMapAccessTest.php
       - name: Test post-scoped token movement rights
         run: php tests/postTokenMoveAccessTest.php
+      - name: Test strict grid style validation
+        run: php tests/gridStyleTest.php
 
   javascript-build:
     name: JavaScript production build
