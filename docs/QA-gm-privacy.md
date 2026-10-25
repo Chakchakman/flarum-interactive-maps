@@ -21,3 +21,9 @@ On the owner's existing tested build (no code update needed for this coverage-on
 
 
 Local final baseline: 14/14 browser, 43/43 JS/build and PHP checks passed. The privacy case additionally uses distinct attempted coordinates for rejected moves, so unchanged saved coordinates demonstrate that denied requests did not write. Exact commit/CI results are recorded separately in PROJECT-CONTEXT. This coverage does not require installing a new product build on the owner's already-tested forum.
+
+
+Touch acceptance means the implemented slider, owned-token movement and normal vertical forum scrolling; background touch-pan/pinch are explicitly deferred in QA Alpha.5. Do not report them as implemented or as passing from a mouse-only/narrow-viewport test. The editor's five-second refresh and the embed's explicit refresh are not the planned v0.3 synchronization guarantee.
+
+
+Final CI: `ca60b9e9b84a893b7c89167836b9bdd5714591e9`, [runtime 40202607480](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40202607480) Success (3m48s), [Extension CI 40202607421](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40202607421) Success (31s, including Windows script checks). Runtime install and Exercise forum UI steps both succeeded. The earlier e08733d runtime failed at Install browser, before UI tests; the runner is now pinned to supported Ubuntu 24.04. The full first-failure log was unavailable, so its exact dependency/network error is not asserted. After strengthening rejected-move coordinates, the affected local case also passed separately (1/1). Documentation-only follow-ups do not change the tested suite. Owner GM/theme/touch acceptance and any named third-party integration remain pending.

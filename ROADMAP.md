@@ -5,7 +5,7 @@ Status: working plan, agreed 2026-10-20. Versions are milestones, not release da
 
 ## Current priorities — 2026-10-25
 
-The owner passed the supplied Alpha.7 picker/composer/owner-search, presentation and player-permission checks on code `28bff5e`. Grid schema upgrade completed after a fresh backup. Automatic baseline: 43 JS tests, 11 browser scenarios and PHP/CI checks. This is lab acceptance of the named scenarios, not release/merge authorization.
+The owner passed the supplied Alpha.7 picker/composer/owner-search, presentation and player-permission checks on code `28bff5e`. Grid schema upgrade completed after a fresh backup. Automatic baseline: 43 JS tests, 14 browser scenarios and PHP/CI checks on `ca60b9e`; explicit GM grants, core private/hidden scopes, custom extension scopers and multiple embeds passed automatically. This is lab acceptance of the named scenarios, not release/merge authorization.
 
 | Order | Work | Completion evidence |
 | --- | --- | --- |
