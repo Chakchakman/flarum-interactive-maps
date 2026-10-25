@@ -1,4 +1,5 @@
 import Component from 'flarum/common/Component';
+import Avatar from 'flarum/common/components/Avatar';
 import { endpoint, displayError } from '../api';
 
 let nextOwnerInput = 0;
@@ -41,7 +42,19 @@ export default class TokenOwnerInput extends Component {
           method: 'GET', url: endpoint('chak-map-users'), params: { prefix },
         });
         if (!this.removed && sequence === this.sequence) {
-          this.results = response.data.map((user) => ({ id: user.id, username: user.attributes.username }));
+          this.results = response.data.map((user) => ({
+            id: user.id,
+            username: user.attributes.username,
+            // Isolated view-model: never overwrite an existing user's nickname
+            // or other attributes in the shared store with a limited lookup DTO.
+            avatar: app.store.createRecord('users', {
+              type: 'users', id: user.id,
+              attributes: {
+                username: user.attributes.username, displayName: user.attributes.username,
+                avatarUrl: user.attributes.avatarUrl || null,
+              },
+            }),
+          }));
         }
       } catch (error) {
         if (!this.removed && sequence === this.sequence) this.error = displayError(error);
@@ -108,7 +121,11 @@ export default class TokenOwnerInput extends Component {
             id={this.id + '-option-' + index} tabindex="-1"
             aria-selected={String(this.active === index)} disabled={this.attrs.disabled}
             onmousedown={(event) => event.preventDefault()}
-            onclick={() => this.choose(user.username)}>@{user.username}</button>)}
+            onclick={() => this.choose(user.username)}>
+            <Avatar user={user.avatar} className="TokenOwnerInput-avatar" aria-hidden="true"
+              onerror={() => { user.avatar.pushAttributes({ avatarUrl: null }); m.redraw(); }} />
+            <span>@{user.username}</span>
+          </button>)}
         </div>
       </div>}
     </div>;

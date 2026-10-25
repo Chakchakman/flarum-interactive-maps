@@ -204,3 +204,9 @@ PR [#15](https://github.com/ChakChakman/flarum-interactive-maps/pull/15) доб�
 ### Круглые фишки
 
 `feature/circular-tokens`, база `c7a9e5b`: единый cover/center и border-radius 50% для всех фишек и миниатюр. Геометрия/координаты/drag/права не меняются, миграции нет. Локально 40 JS/build и 9 browser — успех, включая круглую форму своих/чужих фишек и drag 200% с reload под отдельным игроком. Первый запуск застал перезапуск PHP-сервера (connection refused); после проверки HTTP готовности полный прогон успешен. Ручная приёмка именно круглой обрезки ещё не получена. См. QA-circular-tokens.md.
+
+### Аватары в подсказках владельца
+
+`feature/owner-avatars` поверх `feature/circular-tokens` (`e949ffb`): нативный Avatar Flarum в обоих селекторах, initials fallback для отсутствующей/недоступной картинки. API добавляет только публичный avatarUrl и сохраняет staff-only/visibility/limit/prefix проверки; email и приватные поля не выдаются. Изолированные User view-models не перезаписывают загруженные nicknames/аватары общего store. Без миграции.
+
+Локально 40 JS/build и 10 browser — успех, включая реальные ответы API без аватара, image/broken-image DTO fixtures, оба селектора и сохранность профиля. Загрузка/обработка новых файлов аватаров не менялась и не объявляется проверенной. Ручная приёмка этих изображений владельцем ещё требуется. См. QA-owner-avatars.md.

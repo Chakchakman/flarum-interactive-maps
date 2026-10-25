@@ -143,10 +143,11 @@
     border: 1px solid var(--control-bg, #ddd); box-shadow: 0 3px 12px rgba(0,0,0,.15);
     p { margin: 6px; }
     button {
-      display: block; width: 100%; padding: 8px; text-align: left;
+      display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px; text-align: left;
       overflow-wrap: anywhere; border: 0; border-radius: 3px; cursor: pointer;
       background: transparent; color: inherit;
       &:hover, &[aria-selected="true"] { background: var(--control-bg, #eee); }
     }
   }
+  &-avatar { width: 28px; height: 28px; flex-shrink: 0; object-fit: cover; border-radius: 50%; }
 }

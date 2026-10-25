@@ -23,10 +23,11 @@ final class SearchMapUsersController extends ApiController implements RequestHan
         $pattern = strtr($prefix, ['=' => '==', '%' => '=%', '_' => '=_']).'%';
         $users = User::query()->whereVisibleTo(RequestUtil::getActor($request))
             ->whereRaw("username LIKE ? ESCAPE '='", [$pattern])
-            ->orderBy('username')->limit(10)->get(['id', 'username']);
+            ->orderBy('username')->limit(10)->get();
         return $this->document($users->map(fn (User $user) => [
             'type' => 'chak-map-users', 'id' => (string) $user->id,
-            'attributes' => ['username' => $user->username],
+            // Use Flarum's avatar accessor/driver; serialize no private fields.
+            'attributes' => ['username' => $user->username, 'avatarUrl' => $user->avatar_url],
         ])->all());
     }
 }

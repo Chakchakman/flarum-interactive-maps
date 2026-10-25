@@ -21,7 +21,7 @@ test('staff owner search starts at three characters, limits results, and assigns
   expect(options.data).toHaveLength(10);
   for (const item of options.data) {
     expect(item.attributes.username.toLowerCase().startsWith('tok')).toBe(true);
-    expect(Object.keys(item.attributes)).toEqual(['username']);
+    expect(Object.keys(item.attributes).sort()).toEqual(['avatarUrl', 'username']);
   }
   expect((await api(page, 'GET', 'chak-map-users?prefix=to')).data).toEqual([]);
   expect((await api(page, 'GET', 'chak-map-users?prefix=to_')).data).toEqual([]);
