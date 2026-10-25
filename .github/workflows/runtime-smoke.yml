@@ -11,7 +11,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   browser:
-    runs-on: ubuntu-latest
+    # Playwright 1.56.1 provides its browser dependencies for Ubuntu 24.04.
+    # Keep this stable when ubuntu-latest changes to a newer distribution.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
       mysql:
