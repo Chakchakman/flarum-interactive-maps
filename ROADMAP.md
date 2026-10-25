@@ -9,7 +9,7 @@ The owner passed the supplied Alpha.7 picker/composer/owner-search, presentation
 
 | Order | Work | Completion evidence |
 | --- | --- | --- |
-| 1 | Finish v0.2 release gates | Explicit GM grants, visibility/private-discussion integrations, multiple embeds, narrow/light/dark layouts, reproducible install/upgrade; distinguish automated and owner results |
+| 1 | Finish v0.2 release gates | GM/hidden/private/extension-scoper/multiple-embed and 390/1280px regression tests added; owner GM/theme/touch checks and actual third-party privacy integration (if used) remain; review reproducible install/upgrade |
 | 2 | Prepare v0.2 review | Current README/context/QA, exact tested source and built assets, review existing/stacked PRs; owner decides release/merge |
 | 3 | Plan v0.3 client synchronization | Audit existing refresh behavior; specify and test two-client convergence, stale updates and competing moves; presence remains provisional |
 | 4 | Later agreed milestones | Measurement/markers, image upload/layers, fog of war and session features; no expansion without scope agreement |

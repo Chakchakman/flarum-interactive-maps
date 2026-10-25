@@ -12,12 +12,12 @@ async function login(page, username = 'smokeadmin', password = 'Smoke-test-only-
   await page.waitForFunction(() => !!window.app?.session?.user);
 }
 
-async function api(page, method, path, attributes, status = 200, type = 'chak-maps') {
+async function api(page, method, path, attributes, status = 200, type = 'chak-maps', relationships) {
   const csrf = await page.evaluate(() => app.session.csrfToken);
   const response = await page.request.fetch('/api/' + path, {
     method,
     headers: { 'X-CSRF-Token': csrf, Accept: 'application/vnd.api+json' },
-    ...(attributes === undefined ? {} : { data: { data: { type, attributes } } }),
+    ...(attributes === undefined ? {} : { data: { data: { type, attributes, ...(relationships ? { relationships } : {}) } } }),
   });
   expect(response.status(), method + ' ' + path + ': ' + await response.text()).toBe(status);
   return response.status() === 204 ? null : response.json();
