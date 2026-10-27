@@ -115,3 +115,8 @@ e917eaa passed all four owner checks (ordinary forum/picker, conflict/retry, rea
 ### Local map backgrounds implementation — 2026-10-27
 
 feature/local-map-backgrounds implements private PNG/JPEG upload/create/replace with existing URL fallback, server content/resource validation, scoped image reads and transactional compensation. Reuses Intervention Image with an explicit ^3.11 minimum for strip support; no new package/service. Includes the separately committed generic placeholders 7f3f0cb and presentation a4c3136. Auto tests and CI are recorded separately; owner acceptance of the new cumulative build remains pending. Existing-schema approval concerns only the two presentation columns. [QA](docs/QA-local-map-backgrounds.md).
+
+
+### Token images and clipboard pulled forward — 2026-10-28
+
+Owner explicitly added local character images and clipboard image paste to the background-upload task. `feature/local-token-images` implements create/replace, 512 px proportional token resize and explicit clipboard/file controls for both image types. Existing move/owner/privacy rules remain intact; no extra schema or dependency. Local 68 JS/build, PHP checks and full 34 browser cases passed, followed by 7 focused cases after the final picker refinement; remote CI and owner acceptance are separate gates. See [QA](docs/QA-token-images-clipboard.md). Presentation schema application still needs a fresh backup and explicit approval. Complete acceptance/release checklist before the next substantial v0.4 measurement/marker task; layers, fog and presence are not silently included.

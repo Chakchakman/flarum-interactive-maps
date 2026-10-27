@@ -2,7 +2,7 @@ name: Flarum runtime smoke
 on:
   pull_request:
   push:
-    branches: ['fix/flarum-runtime-smoke', 'feature/composer-map-attachment', 'feature/token-owner-search', 'feature/circular-tokens', 'feature/owner-avatars', 'feature/grid-style', 'feature/gm-privacy-regression', 'feature/post-map-sync', 'feature/token-move-conflicts', 'feature/sync-performance', 'fix/build-dependency-audit', 'feature/embed-presentation', 'feature/local-map-backgrounds']
+    branches: ['fix/flarum-runtime-smoke', 'feature/composer-map-attachment', 'feature/token-owner-search', 'feature/circular-tokens', 'feature/owner-avatars', 'feature/grid-style', 'feature/gm-privacy-regression', 'feature/post-map-sync', 'feature/token-move-conflicts', 'feature/sync-performance', 'fix/build-dependency-audit', 'feature/embed-presentation', 'feature/local-map-backgrounds', 'feature/local-token-images']
   workflow_dispatch:
 permissions:
   contents: read
@@ -62,6 +62,9 @@ jobs:
           php "$GITHUB_WORKSPACE/tests/mapBackgroundsTest.php" "$RUNNER_TEMP/forum/vendor/autoload.php"
           php "$GITHUB_WORKSPACE/tests/mapBackgroundPrivacyRuntimeTest.php" "$RUNNER_TEMP/forum" --isolated-forum
           php "$GITHUB_WORKSPACE/tests/mapBackgroundTransactionRuntimeTest.php" "$RUNNER_TEMP/forum" --isolated-forum
+          php "$GITHUB_WORKSPACE/tests/tokenImagesTest.php" "$RUNNER_TEMP/forum/vendor/autoload.php"
+          php "$GITHUB_WORKSPACE/tests/tokenImagePrivacyRuntimeTest.php" "$RUNNER_TEMP/forum" --isolated-forum
+          php "$GITHUB_WORKSPACE/tests/tokenImageTransactionRuntimeTest.php" "$RUNNER_TEMP/forum" --isolated-forum
           PHP_CLI_SERVER_WORKERS=4 php -S 127.0.0.1:8888 -t public > "$RUNNER_TEMP/forum-server.log" 2>&1 &
       - name: Install browser
         working-directory: tests/browser

@@ -105,6 +105,8 @@ return [
         ->patch('/chak-maps/{id}', 'chak.maps.update', UpdateMapController::class)
         ->delete('/chak-maps/{id}', 'chak.maps.delete', DeleteMapController::class)
         ->post('/chak-maps/{id}/tokens', 'chak.tokens.create', CreateTokenController::class)
+        ->post('/chak-tokens/{id}/image', 'chak.tokens.image.upload', \ChakChakman\InteractiveMaps\Api\UploadTokenImageController::class)
+        ->get('/chak-tokens/{id}/image/{file}', 'chak.tokens.image', \ChakChakman\InteractiveMaps\Api\ShowTokenImageController::class)
         ->post('/chak-tokens/{id}/move', 'chak.tokens.move', MoveTokenController::class)
         ->patch('/chak-tokens/{id}/owner', 'chak.tokens.assign', AssignTokenController::class)
         ->post('/chak-map-embeds', 'chak.map-embeds.attach', AttachMapToPostController::class)

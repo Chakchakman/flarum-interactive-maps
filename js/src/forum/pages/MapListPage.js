@@ -1,3 +1,4 @@
+import ImageUploadInput from '../components/ImageUploadInput';
 import Page from 'flarum/common/components/Page';
 import Link from 'flarum/common/components/Link';
 import { endpoint, displayError } from '../api';
@@ -139,12 +140,9 @@ export default class MapListPage extends Page {
                 <label for="chak-map-background-url">Адрес фонового изображения</label>
                 <input id="chak-map-background-url" className="FormControl" required={!this.imageFile} disabled={this.creating || !!this.imageFile} value={this.backgroundUrl} oninput={(event) => this.backgroundUrl = event.target.value} placeholder="https://example.com/map.jpg" />
                 <label for="chak-map-background-file">Или загрузите изображение с устройства</label>
-                <input id="chak-map-background-file" className="FormControl" type="file" accept="image/png,image/jpeg"
-                  disabled={this.creating} oncreate={vnode => this.fileInput = vnode.dom}
-                  onchange={event => { this.imageFile = event.target.files?.[0] || null; this.error = ''; }} />
+                <ImageUploadInput id="chak-map-background-file" pasteLabel="Вставить изображение карты из буфера" selectedFile={this.imageFile} disabled={this.creating}
+                  onSelect={file => { this.imageFile = file; this.error = ''; }} />
                 <p className="ChakMaps-muted">PNG или JPEG, до 10 МиБ, 8192 px по стороне и 16 мегапикселей. Действуют также лимиты сервера.</p>
-                {this.imageFile && <button type="button" className="Button Button--link" disabled={this.creating}
-                  onclick={() => { this.imageFile = null; this.fileInput.value = ''; }}>Убрать выбранный файл</button>}
                 <button type="submit" className="Button Button--primary" disabled={this.creating}>{this.creating ? 'Создание…' : 'Создать карту'}</button>
               </form>
             )}

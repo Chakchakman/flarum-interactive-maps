@@ -1,4 +1,6 @@
 import { terminalMoveError } from '../tokenMoveConflict.mjs';
+import ImageUploadInput from '../components/ImageUploadInput';
+import UploadTokenImageModal from '../components/UploadTokenImageModal';
 import Page from 'flarum/common/components/Page';
 import Link from 'flarum/common/components/Link';
 import { endpoint, displayError } from '../api';
@@ -35,6 +37,7 @@ export default class MapPage extends Page {
     this.uploadingBackground = false;
     this.tokenName = '';
     this.tokenImageUrl = '';
+    this.tokenFile = null;
     this.tokenOwner = '';
     this.adding = false;
     this.dragging = null;
@@ -310,15 +313,21 @@ export default class MapPage extends Page {
     if (this.adding) return;
     this.adding = true;
     try {
+      let upload;
+      if (this.tokenFile) {
+        upload = new FormData(); upload.append('name', this.tokenName.trim()); upload.append('ownerUsername', this.tokenOwner.trim()); upload.append('image', this.tokenFile);
+      }
       await app.request({
         method: 'POST', url: endpoint(`chak-maps/${this.mapId}/tokens`),
-        body: resourceBody('chak-tokens', {
+        body: upload || resourceBody('chak-tokens', {
           name: this.tokenName.trim(),
           imageUrl: this.tokenImageUrl.trim(),
           ownerUsername: this.tokenOwner.trim(),
         }),
+        ...(upload ? { serialize: value => value } : {}), errorHandler: () => {},
       });
       this.tokenName = '';
+      this.tokenFile = null;
       this.error = '';
       await this.refresh();
     } catch (error) {
@@ -329,8 +338,7 @@ export default class MapPage extends Page {
     }
   }
 
-  async uploadBackground(event) {
-    const file = event.target.files?.[0]; event.target.value = '';
+  async uploadBackground(file) {
     if (!file || this.uploadingBackground || !this.canManage || !this.map) return;
     if (this.hasPendingLocalChanges()) { this.error = 'Дождитесь сохранения фишек и сетки перед заменой фона.'; return; }
     if (file.size > 10 * 1024 * 1024) { this.error = 'Изображение: не более 10 МиБ.'; return; }
@@ -349,6 +357,15 @@ export default class MapPage extends Page {
       this.uploadingBackground = false;
       if (!this.removed) m.redraw();
     }
+  }
+
+  changeTokenImage(token) {
+    app.modal.show(UploadTokenImageModal, { token, onSaved: saved => {
+      if (this.removed) return;
+      const current = this.map?.tokens.find(item => String(item.id) === String(saved.id));
+      if (current) current.imageUrl = saved.imageUrl;
+      this.localRevision++; this.lastRemoteSnapshot = null; this.error = ''; m.redraw();
+    } });
   }
 
   assign(token) {
@@ -394,8 +411,7 @@ export default class MapPage extends Page {
           <div className="ChakMap-sidebar">
             {this.canManage && <section className="ChakMaps-panel">
               <label for="chak-map-replace-background">Загрузить новый фон с устройства</label>
-              <input id="chak-map-replace-background" className="FormControl" type="file" accept="image/png,image/jpeg"
-                disabled={this.uploadingBackground} onchange={event => this.uploadBackground(event)} />
+              <ImageUploadInput id="chak-map-replace-background" pasteLabel="Вставить новый фон из буфера" disabled={this.uploadingBackground} onSelect={file => this.uploadBackground(file)} />
               <p className="ChakMaps-muted">PNG или JPEG, до 10 МиБ. Фишки и настройки сетки сохраняются.</p>
               {this.uploadingBackground && <p role="status">Загружаем фон…</p>}
             </section>}
@@ -407,6 +423,8 @@ export default class MapPage extends Page {
                 <div className="ChakMap-tokenRow" key={token.id}>
                   <img src={token.imageUrl} alt="" />
                   <div><b>{token.name}</b><small>{token.ownerUsername ? `@${token.ownerUsername}` : 'Без владельца'}</small></div>
+                  {this.canManage && <button type="button" className="Button Button--icon" title="Изменить изображение"
+                    aria-label={'Изменить изображение: ' + token.name} onclick={() => this.changeTokenImage(token)}>▧</button>}
                   {this.canManage && <button className="Button Button--icon" title="Назначить пользователя"
                     aria-label={'Назначить владельца: ' + token.name} onclick={() => this.assign(token)}>✎</button>}
                 </div>
@@ -438,7 +456,11 @@ export default class MapPage extends Page {
                   <label for="chak-token-name">Имя</label>
                   <input id="chak-token-name" className="FormControl" required value={this.tokenName} oninput={(e) => this.tokenName = e.target.value} placeholder="Имя фишки" />
                   <label for="chak-token-image">Адрес PNG/JPG</label>
-                  <input id="chak-token-image" className="FormControl" required value={this.tokenImageUrl} oninput={(e) => this.tokenImageUrl = e.target.value} />
+                  <input id="chak-token-image" className="FormControl" required={!this.tokenFile} disabled={this.adding || !!this.tokenFile} value={this.tokenImageUrl} oninput={(e) => this.tokenImageUrl = e.target.value} />
+                  <label for="chak-token-file">Или изображение с устройства / из буфера</label>
+                  <ImageUploadInput id="chak-token-file" pasteLabel="Вставить изображение новой фишки из буфера" selectedFile={this.tokenFile} disabled={this.adding}
+                    onSelect={file => { this.tokenFile = file; this.error = ''; }} />
+                  <p className="ChakMaps-muted">PNG/JPEG до 10 МиБ; сохраняется версия до 512 px с исходными пропорциями.</p>
                   <label for="chak-token-owner-new">Владелец (username в Flarum)</label>
                   <TokenOwnerInput id="chak-token-owner-new" value={this.tokenOwner}
                     onchange={(value) => this.tokenOwner = value} disabled={this.adding} />

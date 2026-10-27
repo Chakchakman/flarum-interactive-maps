@@ -1,14 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { login, api, createMap, discussion, savedPost, mapImage } = require('./helpers');
-
-async function raster(page, mime = 'image/png') {
-  const encoded = await page.evaluate(type => {
-    const canvas = document.createElement('canvas'); canvas.width = 800; canvas.height = 600;
-    const context = canvas.getContext('2d'); context.fillStyle = '#4d7281'; context.fillRect(0, 0, 800, 600);
-    return canvas.toDataURL(type).split(',')[1];
-  }, mime);
-  return { name: mime === 'image/png' ? 'device-map.png' : 'device-map.jpg', mimeType: mime, buffer: Buffer.from(encoded, 'base64') };
-}
+const { rasterFile: raster, login, api, createMap, discussion, savedPost, mapImage } = require('./helpers');
 
 async function upload(page, path, file, fields = {}, status = 200) {
   const response = await page.request.post('/api/' + path, {
@@ -107,7 +98,7 @@ test('invalid create does not publish a partial map; an upload network error pre
   await page.getByRole('button', { name: 'Создать карту', exact: true }).click();
   await expect(page.locator('.ChakMaps-error')).toContainText('Temporary upload failure');
   await expect(page.locator('#chak-map-title')).toHaveValue(title);
-  expect(await page.locator('#chak-map-background-file').evaluate(input => input.files.length)).toBe(1);
+  await expect(page.locator('#chak-map-background-file').locator('..')).toContainText(png.name);
   await page.getByRole('button', { name: 'Создать карту', exact: true }).click();
   await page.waitForURL(/\/maps\/\d+$/);
   expect(failures).toBe(2);

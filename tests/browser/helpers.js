@@ -69,4 +69,13 @@ async function createMap(page, title) {
   return result.data.id;
 }
 
-module.exports = { login, api, savedPost, discussion, openPicker, mapImage, createMap };
+async function rasterFile(page, mime = 'image/png', width = 800, height = 600) {
+  const encoded = await page.evaluate(({ type, width, height }) => {
+    const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+    const context = canvas.getContext('2d'); context.fillStyle = '#4d7281'; context.fillRect(0, 0, width, height);
+    return canvas.toDataURL(type).split(',')[1];
+  }, { type: mime, width, height });
+  return { name: mime === 'image/png' ? 'device-map.png' : 'device-map.jpg', mimeType: mime, buffer: Buffer.from(encoded, 'base64') };
+}
+
+module.exports = { rasterFile, login, api, savedPost, discussion, openPicker, mapImage, createMap };
