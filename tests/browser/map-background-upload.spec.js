@@ -34,6 +34,7 @@ test('create from a device file, replace with JPEG and retry a rejected file wit
   const mapId = new URL(page.url()).pathname.split('/').pop();
   const first = await api(page, 'GET', 'chak-maps/' + mapId);
   const oldUrl = first.data.attributes.backgroundUrl;
+  expect(new URL(oldUrl, page.url()).pathname).toMatch(/\/background\/[a-f0-9]{32}$/);
   const image = await page.request.get(oldUrl);
   expect(image.status()).toBe(200); expect(image.headers()['content-type']).toBe('image/png');
   expect(image.headers()['cache-control']).toBe('private, no-store');

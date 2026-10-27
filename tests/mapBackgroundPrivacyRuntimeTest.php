@@ -69,7 +69,7 @@ try {
     $filename = $store->store($mapId, $prepared);
     $db->table('chak_maps')->where('id', $mapId)->update(['background_url' => $store->url($mapId, $filename)]);
     $read = fn ($reader = null, $name = null) => (new \ChakChakman\InteractiveMaps\Api\ShowMapBackgroundController($store))->handle(
-        RequestUtil::withActor((new ServerRequest)->withQueryParams(['id' => $mapId, 'file' => $name ?? $filename]), $reader ?? $actor)
+        RequestUtil::withActor((new ServerRequest)->withQueryParams(['id' => $mapId, 'file' => $name ?? pathinfo($filename, PATHINFO_FILENAME)]), $reader ?? $actor)
     );
     $check = function ($response, int $status) {
         if ($response->getStatusCode() !== $status || $response->getHeaderLine('Cache-Control') !== 'private, no-store') {

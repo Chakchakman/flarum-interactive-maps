@@ -23,18 +23,18 @@ final class ShowMapBackgroundController extends ApiController implements Request
         $actor = RequestUtil::getActor($request);
         if ($actor->isGuest()) return $this->error('Нужна авторизация', 403)->withHeader('Cache-Control', 'private, no-store');
         $mapId = $this->id($request);
-        $filename = (string) ($request->getQueryParams()['file'] ?? '');
-        if (!preg_match('/^[a-f0-9]{32}\.(png|jpg)$/D', $filename)) return $this->error('Изображение недоступно', 404)->withHeader('Cache-Control', 'private, no-store');
+        $key = (string) ($request->getQueryParams()['file'] ?? '');
+        if (!preg_match('/^[a-f0-9]{32}$/D', $key)) return $this->error('Изображение недоступно', 404)->withHeader('Cache-Control', 'private, no-store');
         $map = Map::find($mapId);
-        if (!$map || $map->background_url !== $this->backgrounds->url($mapId, $filename)) return $this->error('Изображение недоступно', 404)->withHeader('Cache-Control', 'private, no-store');
+        if (!$map || $map->background_url !== $this->backgrounds->url($mapId, $key)) return $this->error('Изображение недоступно', 404)->withHeader('Cache-Control', 'private, no-store');
         if (!MapPermissions::canManage($actor) && !Post::query()->whereVisibleTo($actor)->where('posts.type', 'comment')
             ->whereIn('posts.id', MapEmbed::query()->where('map_id', $mapId)->select('post_id'))->exists()) {
             return $this->error('Изображение недоступно', 404)->withHeader('Cache-Control', 'private, no-store');
         }
-        $path = $this->backgrounds->path($mapId, $filename);
+        $path = $this->backgrounds->path($mapId, $key.'.png') ?? $this->backgrounds->path($mapId, $key.'.jpg');
         if (!$path) return $this->error('Изображение недоступно', 404)->withHeader('Cache-Control', 'private, no-store');
         return new Response(new Stream($path, 'rb'), 200, [
-            'Content-Type' => str_ends_with($filename, '.png') ? 'image/png' : 'image/jpeg',
+            'Content-Type' => str_ends_with($path, '.png') ? 'image/png' : 'image/jpeg',
             'Content-Length' => (string) filesize($path),
             'Content-Disposition' => 'inline',
             'Cache-Control' => 'private, no-store',

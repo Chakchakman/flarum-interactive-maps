@@ -107,7 +107,7 @@ final class MapBackgrounds
 
     public function url(int $mapId, string $filename): string
     {
-        return parse_url($this->urls->to('api')->route('chak.maps.background', ['id' => $mapId, 'file' => $filename]), PHP_URL_PATH);
+        return parse_url($this->urls->to('api')->route('chak.maps.background', ['id' => $mapId, 'file' => explode('.', $filename, 2)[0]]), PHP_URL_PATH);
     }
 
     public function path(int $mapId, string $filename): ?string
