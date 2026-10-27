@@ -29,3 +29,54 @@ The first browser run caught a real new-code bug: storing window timer functions
 Use a disposable map/post and two browser profiles/accounts. Open the same embedded board for staff and a player owning a token. Move from either client and verify the other updates in approximately five seconds without pressing refresh or reloading. Verify reassignment removes the old owner's drag capability; other tokens remain read-only for that player. Keep two maps in a discussion and check independent zoom. Switch tabs/scroll away and return: the map refreshes without coordinate jump-back. Check normal thread scrolling and composer/BBCode still work. Do not move the original protected map/post link for testing. No migration is required; source builds must regenerate JS. This step remains pending owner acceptance and release approval.
 
 Local final: 51/51 JS tests/build, 17/17 browser scenarios (3.3m), Composer/PHP syntax/access/grid/transaction/migration checks and installed-Flarum batch privacy assertions passed. No production DB migration. CI and owner acceptance remain separate statuses.
+
+## Existing Windows lab: reviewable installation commands
+
+Run only after the final CI for code `851f38ba0b34bfc4095ef383ec46e299ddf44152` succeeds and the owner is ready to test. Close/save composer drafts first. From the existing flarum-map-lab directory (next to docker-compose.yml), this creates an independent code backup, preserves locally generated assets, creates a new test branch and builds the exact source. Unexpected source/staged/untracked changes stop the block before switching. No database migration/reset/volume removal or protected-branch update is performed. If a command fails, stop and share the error; do not rerun later steps individually.
+
+```powershell
+& {
+    $ErrorActionPreference = "Stop"
+    $target = "851f38ba0b34bfc4095ef383ec46e299ddf44152"
+    function Invoke-MapsCheck([scriptblock]$command) {
+        & $command
+        if ($LASTEXITCODE -ne 0) { throw "Команда завершилась с ошибкой. Остановитесь и пришлите вывод." }
+    }
+    $dirty = @(Invoke-MapsCheck { git -C .\extension status --porcelain })
+    $unexpected = @($dirty | Where-Object {
+        $_ -notmatch '^ M js/dist/(forum|admin)\.js(\.map)?$'
+    })
+    if ($unexpected.Count -gt 0) {
+        $unexpected | Write-Host
+        throw "Есть другие локальные изменения. Остановитесь и пришлите список."
+    }
+    $backup = Join-Path $PWD ("_backups\before-post-sync-" + (Get-Date -Format "yyyyMMdd-HHmmss"))
+    New-Item -ItemType Directory -Path $backup | Out-Null
+    Invoke-MapsCheck { tar.exe --exclude=node_modules -czf "$backup\extension.tgz" extension }
+    if ((Get-Item "$backup\extension.tgz").Length -le 0) { throw "Резервная копия пуста." }
+    Invoke-MapsCheck {
+        git -C .\extension fetch origin refs/heads/feature/post-map-sync:refs/remotes/origin/feature/post-map-sync
+    }
+    Invoke-MapsCheck { git -C .\extension cat-file -e "${target}^{commit}" }
+    if ($dirty.Count -gt 0) {
+        Invoke-MapsCheck {
+            git -C .\extension stash push -m "before-post-sync-$(Get-Date -Format yyyyMMdd-HHmmss)" -- js/dist/forum.js js/dist/forum.js.map js/dist/admin.js js/dist/admin.js.map
+        }
+    }
+    Invoke-MapsCheck { git -C .\extension switch -c test/post-map-sync-851f38b $target }
+    Invoke-MapsCheck { docker compose run --rm node npm ci }
+    Invoke-MapsCheck { docker compose run --rm node npm run check }
+    Invoke-MapsCheck {
+        docker compose exec -T -w /var/www/flarum app composer dump-autoload --no-interaction
+    }
+    Invoke-MapsCheck {
+        docker compose exec -T -w /var/www/flarum app php flarum cache:clear
+    }
+    Write-Host "Готово. Резервная копия кода: $backup"
+}
+```
+
+Then hard-refresh and test two separate browser profiles/accounts on a disposable post/map. Report cross-client movement, reassignment, return from a background tab and any errors; no archive/database upload is requested. Existing backup/rollback procedure remains applicable: retain the previous checkout and rebuild its assets/cache if reverting code, without dropping the already-approved additive grid columns.
+
+
+Final CI for exact installation commit `851f38ba0b34bfc4095ef383ec46e299ddf44152`: [runtime 40505899349](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40505899349) Success (6m55s), [Extension CI 40505899313](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40505899313) Success (37s). This final run covers all 17 browser cases including the timeout/restored-map extensions; 51 JS/build and PHP/Windows checks passed. The installation prerequisite above is satisfied; owner forum acceptance/release approval remain pending.

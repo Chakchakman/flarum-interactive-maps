@@ -62,4 +62,4 @@ docker compose run --rm node npm run check
 
 Проверка новой синхронизации: [QA v0.3 Alpha.1](docs/QA-v0.3-alpha1-post-sync.md). Позиции/владельцы обновляются автоматически в новой сборке; фон/сетка/название сохраняют ручное обновление. Защита от одновременных записей и presence пока не реализованы.
 
-Локально новая ветка прошла 51 JS-тест, 17 браузерных сценариев и PHP-проверки; результаты CI точного SHA фиксируются в PROJECT-CONTEXT.
+Новая сборка v0.3 Alpha.1: `851f38b`, ветка `feature/post-map-sync`. 51 JS-тест, 17 браузерных сценариев и PHP/Windows-проверки прошли; [runtime CI](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40505899349) и [Extension CI](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40505899313) успешны. Проверка владельцем ещё требуется. Команды установки без миграции находятся в [QA v0.3 Alpha.1](docs/QA-v0.3-alpha1-post-sync.md).
