@@ -60,6 +60,8 @@ jobs:
           cache-dependency-path: js/package-lock.json
       - run: npm ci
       - run: npm run check
+      - name: Audit locked build dependencies
+        run: npm audit
 
       - name: Package test build with fresh assets
         working-directory: .

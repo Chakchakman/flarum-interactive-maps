@@ -2,7 +2,7 @@ name: Flarum runtime smoke
 on:
   pull_request:
   push:
-    branches: ['fix/flarum-runtime-smoke', 'feature/composer-map-attachment', 'feature/token-owner-search', 'feature/circular-tokens', 'feature/owner-avatars', 'feature/grid-style', 'feature/gm-privacy-regression', 'feature/post-map-sync', 'feature/token-move-conflicts', 'feature/sync-performance']
+    branches: ['fix/flarum-runtime-smoke', 'feature/composer-map-attachment', 'feature/token-owner-search', 'feature/circular-tokens', 'feature/owner-avatars', 'feature/grid-style', 'feature/gm-privacy-regression', 'feature/post-map-sync', 'feature/token-move-conflicts', 'feature/sync-performance', 'fix/build-dependency-audit']
   workflow_dispatch:
 permissions:
   contents: read
@@ -69,6 +69,9 @@ jobs:
           MAPS_FORUM_ROOT: ${{ runner.temp }}/forum
         working-directory: tests/browser
         run: npm test
+      - name: Audit installed PHP dependencies
+        working-directory: ${{ runner.temp }}/forum
+        run: composer audit
       - name: Save browser diagnostics
         if: always()
         uses: actions/upload-artifact@v4
