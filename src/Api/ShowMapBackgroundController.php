@@ -27,8 +27,8 @@ final class ShowMapBackgroundController extends ApiController implements Request
         if (!preg_match('/^[a-f0-9]{32}\.(png|jpg)$/D', $filename)) return $this->error('Изображение недоступно', 404)->withHeader('Cache-Control', 'private, no-store');
         $map = Map::find($mapId);
         if (!$map || $map->background_url !== $this->backgrounds->url($mapId, $filename)) return $this->error('Изображение недоступно', 404)->withHeader('Cache-Control', 'private, no-store');
-        if (!MapPermissions::canManage($actor) && !Post::query()->whereVisibleTo($actor)->where('type', 'comment')
-            ->whereIn('id', MapEmbed::query()->where('map_id', $mapId)->select('post_id'))->exists()) {
+        if (!MapPermissions::canManage($actor) && !Post::query()->whereVisibleTo($actor)->where('posts.type', 'comment')
+            ->whereIn('posts.id', MapEmbed::query()->where('map_id', $mapId)->select('post_id'))->exists()) {
             return $this->error('Изображение недоступно', 404)->withHeader('Cache-Control', 'private, no-store');
         }
         $path = $this->backgrounds->path($mapId, $filename);

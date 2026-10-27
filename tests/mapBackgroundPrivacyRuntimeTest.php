@@ -103,6 +103,13 @@ try {
         $state->blocked = false; $check($read(), 200);
         echo "PASS: protected background retains $table extension scoper\n";
     }
+    Post::registerVisibilityScoper(function ($reader, $query) use ($userId) {
+        if ((int) $reader->id === (int) $userId) {
+            $query->leftJoin('users as image_scope_author', 'image_scope_author.id', '=', 'posts.user_id');
+        }
+    }, 'view');
+    $check($read(), 200);
+    echo "PASS: protected background supports a visibility scoper joining a table with its own id column\n";
     $db->table('chak_map_embeds')->where('post_id', $postId)->delete(); $check($read(), 404);
     $db->table('chak_maps')->where('id', $mapId)->update(['background_url' => '/replacement.png']); $check($read($admin), 404);
 } finally {
