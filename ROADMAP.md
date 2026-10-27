@@ -3,16 +3,18 @@
 Status: working plan, agreed 2026-10-20. Versions are milestones, not release dates.
 **Rule:** no release is tagged until its acceptance checks pass on Flarum 2.x. No schema migrations without a database backup.
 
-## Current priorities — 2026-10-25
+## Current priorities — 2026-10-27
 
 The owner passed the supplied Alpha.7 picker/composer/owner-search, presentation and player-permission checks on code `28bff5e`. Grid schema upgrade completed after a fresh backup. Automatic baseline: 43 JS tests, 14 browser scenarios and PHP/CI checks on `ca60b9e`; explicit GM grants, core private/hidden scopes, custom extension scopers and multiple embeds passed automatically. This is lab acceptance of the named scenarios, not release/merge authorization.
 
 | Order | Work | Completion evidence |
 | --- | --- | --- |
-| 1 | Finish v0.2 release gates | GM/hidden/private/extension-scoper/multiple-embed and 390/1280px regression tests added; owner GM/theme/touch checks and actual third-party privacy integration (if used) remain; review reproducible install/upgrade |
-| 2 | Prepare v0.2 review | Current README/context/QA, exact tested source and built assets, review existing/stacked PRs; owner decides release/merge |
-| 3 | Plan v0.3 client synchronization | Audit existing refresh behavior; specify and test two-client convergence, stale updates and competing moves; presence remains provisional |
-| 4 | Later agreed milestones | Measurement/markers, image upload/layers, fog of war and session features; no expansion without scope agreement |
+| 1 | Owner acceptance of v0.3 Alpha.2 | Conditional moves implemented on `6499c8d`; 55 JS / 23 browser, PHP and both CI workflows pass; owner conflict/retry checks pending |
+| 2 | Finish v0.2/v0.3 release gates and prepare review | Existing owner-tested features retained; background-tab resume, device/theme checks, install/upgrade review and actual third-party privacy integration (if used) remain; release/merge requires owner decision |
+| 3 | Agree remaining v0.3 scope | Alpha.1 sync owner-tested, Alpha.2 conflicts automatically tested; presence remains provisional and is not automatically authorized |
+| 4 | Later agreed milestones | v0.4 measurement/markers; v0.5 image upload/layers; v0.6 fog of war; v0.7 session features; no expansion without scope agreement |
+
+**Description maintenance:** for every minor version (0.1, 0.2, 0.3 and onward), refresh the main README description, features, limitations and verification/release statuses before preparing the version review. Owner instruction, 2026-10-27.
 
 Zoom/pan were pulled forward and are implemented in both contexts; do not schedule their initial implementation again. Token circles, user avatars, owner autocomplete and grid styles are implemented and owner-tested, not future features. The 2026-10-27 owner instruction authorizes the first focused v0.3 synchronization step, below; it does not authorize release/merge.
 
@@ -90,9 +92,9 @@ Focused follow-ups: circular token image fit; native user avatars in owner sugge
 
 ### v0.3 Alpha.1 in development — 2026-10-27
 
-`feature/post-map-sync`: visible embedded boards share bounded token polling; actor-specific post privacy remains authoritative, local active writes and stale GETs are protected, network errors back off. No migrations/external realtime service. Final code `851f38b` passed 51 JS tests, 17 browser scenarios, PHP/Windows checks and both CI workflows; owner confirmed automatic cross-client movement on 2026-10-27; reassignment/background-tab manual checks remain separate. Exact runs and installation commands are tracked in PROJECT-CONTEXT and QA-v0.3-alpha1-post-sync. The next focused v0.3 work is competing-write conflict handling; presence remains provisional. Current last-committed-write semantics are not described as conflict protection.
+`feature/post-map-sync`: visible embedded boards share bounded token polling; actor-specific post privacy remains authoritative, local active writes and stale GETs are protected, network errors back off. No migrations/external realtime service. Final code `851f38b` passed 51 JS tests, 17 browser scenarios, PHP/Windows checks and both CI workflows; owner confirmed automatic cross-client movement and denial to the former owner after reassignment on 2026-10-27; background-tab manual checks remain separate. Exact runs and installation commands are tracked in PROJECT-CONTEXT and QA-v0.3-alpha1-post-sync. The next focused v0.3 work is competing-write conflict handling; presence remains provisional. Current last-committed-write semantics are not described as conflict protection.
 
 
 ### v0.3 Alpha.2 in development — 2026-10-27
 
-`feature/token-move-conflicts`: current-state movement preconditions, transactional row locking and fresh ownership checks, stale-write rejection and explicit client recovery in post/editor. No schema migration. Old open tabs require refresh (428) before writes. Dedicated concurrency/ownership-race/active-drag tests supplement the Alpha.1 suite; final results and owner acceptance remain separate. See QA-v0.3-alpha2-move-conflicts. Presence and durable history remain future work.
+`feature/token-move-conflicts`: current-state movement preconditions, transactional row locking and fresh ownership checks, stale-write rejection and explicit client recovery in post/editor. No schema migration. Old open tabs require refresh (428) before writes. Dedicated concurrency/ownership-race/active-drag tests supplement the Alpha.1 suite. Code `6499c8d`: 55 JS / 23 browser scenarios, PHP and Windows checks passed; runtime CI 40535360635 and Extension CI 40535360746 are successful. Owner acceptance is pending. See QA-v0.3-alpha2-move-conflicts. Presence and durable history remain future work.

@@ -32,3 +32,65 @@ Open two clients on the same token. Hold a drag in the first, commit a move in t
 Local final: 23/23 browser (4.1m), 55/55 JS/build, Composer/PHP syntax/access/grid/transaction/migration and runtime visibility/batch checks passed. Exact final commit/CI and owner acceptance are recorded separately in PROJECT-CONTEXT. Production dist is rebuilt for tests and is not committed before owner acceptance.
 
 MariaDB 11.8 compatibility: the initial CI failed with 1020 / Record has changed since last read after a lock wait. A clean separate local 11.8 forum reproduced the same two failures. Three bounded full-transaction attempts fixed both targeted concurrency/ownership cases; remaining full local/CI results are recorded separately. The earlier 11.4-only success was insufficient evidence for 11.8.
+
+## Existing Windows lab: safe source update
+
+Use only after the final CI for `6499c8d01298080fef942da0fe5d0ffda15f6db1` succeeds. Save composer drafts and stop test moves during the update. From the lab directory with docker-compose.yml, the block preserves current code/generated assets and creates a new test branch; unexpected source/staged/untracked changes stop before checkout. No migration or DB restore. Stop on error and share the output instead of repeating later commands independently. Restarting only app after cache clear ensures PHP workers load the new write protocol; existing DB volumes are retained.
+
+```powershell
+& {
+    $ErrorActionPreference = "Stop"
+    $target = "6499c8d01298080fef942da0fe5d0ffda15f6db1"
+    function Invoke-MapsCheck([scriptblock]$command) {
+        & $command
+        if ($LASTEXITCODE -ne 0) { throw "Ошибка. Остановитесь и пришлите вывод." }
+    }
+    $dirty = @(Invoke-MapsCheck { git -C .\extension status --porcelain })
+    $unexpected = @($dirty | Where-Object {
+        $_ -notmatch '^ M js/dist/(forum|admin)\.js(\.map)?$'
+    })
+    if ($unexpected.Count -gt 0) {
+        $unexpected | Write-Host
+        throw "Есть другие локальные изменения. Остановитесь и пришлите список."
+    }
+    $backup = Join-Path $PWD ("_backups\before-token-conflicts-" + (Get-Date -Format "yyyyMMdd-HHmmss"))
+    New-Item -ItemType Directory -Path $backup | Out-Null
+    Invoke-MapsCheck { tar.exe --exclude=node_modules -czf "$backup\extension.tgz" extension }
+    if ((Get-Item "$backup\extension.tgz").Length -le 0) { throw "Резервная копия пуста." }
+    Invoke-MapsCheck { tar.exe -tzf "$backup\extension.tgz" > $null }
+    Invoke-MapsCheck { docker compose start db app prototype }
+    Invoke-MapsCheck {
+        git -C .\extension fetch origin refs/heads/feature/token-move-conflicts:refs/remotes/origin/feature/token-move-conflicts
+    }
+    Invoke-MapsCheck { git -C .\extension cat-file -e "${target}^{commit}" }
+    if ($dirty.Count -gt 0) {
+        Invoke-MapsCheck {
+            git -C .\extension stash push -m "before-token-conflicts-$(Get-Date -Format yyyyMMdd-HHmmss)" -- js/dist/forum.js js/dist/forum.js.map js/dist/admin.js js/dist/admin.js.map
+        }
+    }
+    Invoke-MapsCheck { git -C .\extension switch -c test/token-move-conflicts-6499c8d $target }
+    Invoke-MapsCheck { docker compose run --rm node npm ci }
+    Invoke-MapsCheck { docker compose run --rm node npm run check }
+    Invoke-MapsCheck {
+        docker compose exec -T -w /var/www/flarum app composer dump-autoload --no-interaction
+    }
+    Invoke-MapsCheck {
+        docker compose exec -T -w /var/www/flarum app php flarum cache:clear
+    }
+    Invoke-MapsCheck { docker compose restart app }
+    Write-Host "Готово. Копия кода: $backup. Обновите все тестовые вкладки через Ctrl+F5."
+}
+```
+
+### Manual conflict on two devices or one computer
+
+Assign a disposable token to the player; open the same saved post as that player and as administrator. With two devices, hold the player's drag, commit an administrator move to another cell, then release the player. Expect a local conflict message, adoption of the administrator's saved position and no overwrite; a fresh player gesture must then succeed.
+
+On one computer, make the first client's view stale by temporarily blocking **only** its `chak-map-sync` GET request in DevTools Network (right-click that request → Block request URL). Do not block the movement POST. Move the token in the second client, then move the stale token in the first. The same conflict/retry behavior must hold. A temporary snapshot retry notice while GET is blocked is expected. Remove request blocking and switch away/back to resume automatic refresh. Repeat the conflict in the staff editor by temporarily blocking its `GET /api/chak-maps/{id}` read, keeping its move POST enabled. The editor's normal refresh must not replace the stale base before the tested gesture. All browser profiles must hard-refresh the new bundle first; old ones get the intentional 428 refresh instruction. No SQL archive or credentials are requested.
+
+Final local MariaDB 11.8 run after the transaction retry fix: 23/23 browser (4.2m), PHP metadata/syntax/access/grid/transaction/migration and installed-Flarum visibility/batch checks passed. The earlier full 11.8 run correctly failed the two concurrency cases; the fixed targeted run passed 2/2 before this full run. JS source is unchanged from the passing 55-test build.
+
+
+## Final automated status — 2026-10-27
+
+Exact source `6499c8d01298080fef942da0fe5d0ffda15f6db1`: 55 JS/build and 23/23 browser cases (local MariaDB 11.8, 4.2m), PHP checks passed. [Runtime CI 40535360635](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40535360635) succeeded (14m29s); [Extension CI 40535360746](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40535360746) succeeded (33s), including Windows checks. The CI prerequisite for the installation block above is met. Owner Alpha.2 acceptance is pending; no release/merge authorized.

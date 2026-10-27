@@ -28,6 +28,7 @@ Older parts of the README and ROADMAP may lag behind the latest project context.
 - Before preparing each **new** PR, and after meaningful design ideas, decisions, bug findings or verification, update `docs/PROJECT-CONTEXT.md`. Keep `docs/PRODUCT-VISION.md` and `ROADMAP.md` consistent when the agreement or scope changes.
 - If the runtime smoke fails, inspect logs/traces, differentiate test-selector failures from actual Flarum regressions and fix them safely before promoting alpha versions.
 - Never automatically advance a draft PR to released/accepted based solely on CI.
+- Owner instruction (2026-10-27): at every minor-version milestone (0.1, 0.2, 0.3 and later), update the main project description in README with current features, limits and separate code/automated/owner-tested/release statuses. Keep package descriptions consistent when their advertised scope changes; do not imply a published release or change version numbers without release approval.
 
 ## Safety and spending
 - Never access or alter the owner's local Docker environment or database. Git does not back up MariaDB.
