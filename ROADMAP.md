@@ -100,3 +100,8 @@ Focused follow-ups: circular token image fit; native user avatars in owner sugge
 ### v0.3 Alpha.2 in development — 2026-10-27
 
 `feature/token-move-conflicts`: current-state movement preconditions, transactional row locking and fresh ownership checks, stale-write rejection and explicit client recovery in post/editor. No schema migration. Old open tabs require refresh (428) before writes. Dedicated concurrency/ownership-race/active-drag tests supplement the Alpha.1 suite. Code `6499c8d`: 55 JS / 23 browser scenarios, PHP and Windows checks passed; runtime CI 40535360635 and Extension CI 40535360746 are successful. Owner acceptance is pending. See QA-v0.3-alpha2-move-conflicts. Presence and durable history remain future work.
+
+
+### Proposed embed presentation follow-up — 2026-10-27
+
+Owner requested above/below-text placement and spoiler-style collapse. [Design proposal](docs/EMBED-PRESENTATION-PLAN.md): per-attachment placement/default, viewer-local collapse and suspended polling while closed; existing defaults/rights preserved. Owner clarified that “map in a topic” means its first post, using the existing post association. This is not implemented and does not change the currently tested e917eaa build. Schema application remains subject to fresh backup and explicit approval.
