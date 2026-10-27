@@ -111,3 +111,56 @@ test('different tokens can save independently', async () => {
   waitA.resolve({ x: 0.1, y: 0.2 });
   await until(() => !queue.hasPending(), 'independent queues');
 });
+
+test('each chained move uses the last acknowledged movement version', async () => {
+  const first = deferred(); const calls = [];
+  const queue = new LatestTokenMoveQueue(async (id, target, confirmed) => {
+    calls.push({ target, confirmed });
+    return calls.length === 1 ? first.promise : { ...target, moveVersion: 'v3' };
+  });
+  queue.enqueue(1, { x: 0.2, y: 0.3 }, { x: 0.1, y: 0.1, moveVersion: 'v1' });
+  queue.enqueue(1, { x: 0.4, y: 0.5 }, { x: 0.2, y: 0.3, moveVersion: 'v1' });
+  first.resolve({ x: 0.2, y: 0.3, moveVersion: 'v2' });
+  await until(() => !queue.hasPending(), 'drained');
+  assert.equal(calls[0].confirmed.moveVersion, 'v1');
+  assert.equal(calls[1].confirmed.moveVersion, 'v2');
+});
+
+test('a conflict discards queued stale destinations and adopts only the matching authoritative token', async () => {
+  const request = deferred(); const failures = []; let calls = 0;
+  const queue = new LatestTokenMoveQueue(() => { calls++; return request.promise; }, {
+    onFailure: (id, confirmed) => failures.push(confirmed),
+  });
+  queue.enqueue(7, { x: 0.2, y: 0.3 }, { x: 0.1, y: 0.1, moveVersion: 'a'.repeat(64) });
+  queue.enqueue(7, { x: 0.4, y: 0.5 }, { x: 0.2, y: 0.3, moveVersion: 'a'.repeat(64) });
+  request.reject({ status: 409, response: { errors: [{ code: 'token_move_conflict', meta: {
+    currentToken: { type: 'chak-tokens', id: '7', attributes: { x: 0.8, y: 0.9, moveVersion: 'b'.repeat(64) } },
+  } }] } });
+  await until(() => !queue.hasPending(), 'conflict drain');
+  assert.equal(calls, 1); assert.equal(failures.length, 1);
+  assert.equal(failures[0].x, 0.8); assert.equal(failures[0].moveVersion, 'b'.repeat(64));
+});
+
+test('revocation and missing preconditions stop queued moves without replaying them', async () => {
+  for (const status of [403, 404, 428]) {
+    const request = deferred(); let calls = 0;
+    const queue = new LatestTokenMoveQueue(() => { calls++; return request.promise; });
+    queue.enqueue(1, { x: 0.2, y: 0.3 }, { x: 0.1, y: 0.1 });
+    queue.enqueue(1, { x: 0.4, y: 0.5 }, { x: 0.2, y: 0.3 });
+    request.reject({ status });
+    await until(() => !queue.hasPending(), 'terminal drain');
+    assert.equal(calls, 1);
+  }
+});
+
+test('a conflict cannot apply another token or malformed coordinates', async () => {
+  for (const attributes of [{ x: 0.8, y: 0.9, moveVersion: 'b'.repeat(64) }, { x: 99, y: 0.9, moveVersion: 'b'.repeat(64) }]) {
+    const failures = [];
+    const queue = new LatestTokenMoveQueue(async () => { throw { status: 409, response: { errors: [{ code: 'token_move_conflict', meta: {
+      currentToken: { type: 'chak-tokens', id: '99', attributes },
+    } }] } }; }, { onFailure: (id, confirmed) => failures.push(confirmed) });
+    queue.enqueue(1, { x: 0.2, y: 0.3 }, { x: 0.1, y: 0.1 });
+    await until(() => !queue.hasPending(), 'malformed drain');
+    assert.deepEqual(failures[0], { x: 0.1, y: 0.1 });
+  }
+});

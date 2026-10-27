@@ -1,3 +1,4 @@
+import { terminalMoveError } from '../tokenMoveConflict.mjs';
 import Page from 'flarum/common/components/Page';
 import Link from 'flarum/common/components/Link';
 import { endpoint, displayError } from '../api';
@@ -83,28 +84,38 @@ export default class MapPage extends Page {
       }
     );
     this.moves = new LatestTokenMoveQueue(
-      async (id, position) => {
+      async (id, position, confirmed) => {
         const response = await app.request({
           method: 'POST',
           url: endpoint(`chak-tokens/${id}/move`),
-          body: resourceBody('chak-tokens', position),
+          body: resourceBody('chak-tokens', { ...position, moveVersion: confirmed.moveVersion }),
+          errorHandler: () => {},
         });
         return normalizeToken(response.data);
       },
       {
-        onSuccess: () => {
+        onSuccess: (id, saved) => {
+          const token = this.map?.tokens.find(item => String(item.id) === String(id));
+          if (token && saved?.moveVersion) token.moveVersion = saved.moveVersion;
           if (this.error.startsWith('Перемещение не сохранено:')) this.error = '';
         },
         onFailure: (id, lastConfirmed, error) => {
           if (this.removed) return;
           this.error = `Перемещение не сохранено: ${displayError(error)}`;
-          // Do not interrupt a newer drag in progress. The player may already
+          if (terminalMoveError(error) && String(this.dragging?.token.id) === id) {
+            const drag = this.dragging;
+            drag.element.classList.remove('is-dragging');
+            this.dragging = null;
+            this.localRevision += 1;
+          }
+          // Do not interrupt a newer drag in progress on transient errors. The player may already
           // be carrying the token towards another valid destination.
           if (String(this.dragging?.token.id) !== id) {
             const current = this.map?.tokens.find((token) => String(token.id) === id);
             if (current) {
               current.x = lastConfirmed.x;
               current.y = lastConfirmed.y;
+              if (lastConfirmed.moveVersion) current.moveVersion = lastConfirmed.moveVersion;
             }
           }
         },
@@ -233,7 +244,7 @@ export default class MapPage extends Page {
     const rect = event.currentTarget.closest('.ChakMap-canvas').getBoundingClientRect();
     this.dragging = {
       token, element: event.currentTarget, rect,
-      pointerId: event.pointerId, origX: token.x, origY: token.y,
+      pointerId: event.pointerId, origX: token.x, origY: token.y, moveVersion: token.moveVersion,
     };
     event.currentTarget.classList.add('is-dragging');
   }
@@ -249,7 +260,7 @@ export default class MapPage extends Page {
 
   end(event) {
     if (!this.dragging || event.pointerId !== this.dragging.pointerId) return;
-    const { token, element, origX, origY } = this.dragging;
+    const { token, element, origX, origY, moveVersion } = this.dragging;
     this.dragging = null;
     element.classList.remove('is-dragging');
     if (this.map.snapToGrid && this.map.gridEnabled && this.imageStatus === 'ready') {
@@ -265,7 +276,7 @@ export default class MapPage extends Page {
     this.moves.enqueue(
       token.id,
       { x: token.x, y: token.y },
-      { x: origX, y: origY }
+      { x: origX, y: origY, moveVersion }
     );
     m.redraw();
   }
@@ -355,7 +366,7 @@ export default class MapPage extends Page {
             <MapBoard map={map} metrics={metrics} gridPatternId={this.gridPatternId}
               canMoveToken={(token) => this.isMine(token)}
               onTokenPointerDown={(event, token) => this.begin(event, token)} />
-            <p className="ChakMaps-muted">Редактор для мастеров: можно перемещать фишки и назначать их владельцев. Перемещение игроками прямо в игровых сообщениях появится на следующем этапе v0.2.</p>
+            <p className="ChakMaps-muted">Редактор для мастеров: перемещайте фишки и назначайте владельцев. Игроки управляют своими фишками в сообщениях обсуждений.</p>
           </div>
           <div className="ChakMap-sidebar">
             <section className="ChakMaps-panel">

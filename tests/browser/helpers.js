@@ -13,6 +13,16 @@ async function login(page, username = 'smokeadmin', password = 'Smoke-test-only-
 }
 
 async function api(page, method, path, attributes, status = 200, type = 'chak-maps', relationships) {
+  // Successful fixture moves model a client that just read the current state.
+  // Conflict tests pass their captured version explicitly; denial tests keep
+  // their original forged request unchanged and must fail before preconditions.
+  const move = path.match(/^chak-map-embeds\/(\d+)\/tokens\/(\d+)\/move$/);
+  if (method === 'POST' && move && status === 200 && attributes?.moveVersion === undefined) {
+    const snapshot = await api(page, 'GET', 'chak-map-embeds/' + move[1]);
+    const token = snapshot.included.find(item => String(item.id) === move[2]);
+    expect(token).toBeTruthy();
+    attributes = { ...attributes, moveVersion: token.attributes.moveVersion };
+  }
   const csrf = await page.evaluate(() => app.session.csrfToken);
   const response = await page.request.fetch('/api/' + path, {
     method,

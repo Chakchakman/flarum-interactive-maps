@@ -1,0 +1,32 @@
+# v0.3 Alpha.2 — conditional token movement
+
+Dedicated branch `feature/token-move-conflicts`, based on the owner-tested visible snapshots branch. No schema changes, new dependencies or external services. No release/merge authorization.
+
+## Contract
+
+Every token representation (creation, map read, embedded read and batch sync) carries an opaque `moveVersion`. It hashes token ID, map ID, normalized binary double coordinates and owner ID. Signed zero is canonicalized; after save the model is refreshed under the lock so the returned validator describes the actual persisted values, including PDO float-binding rounding. Each movement route requires the observed value alongside x/y. Missing/malformed values return 428 with a refresh instruction. Old open tabs must reload the new bundle before writing; they cannot bypass the new checks by omitting the value. Existing read payloads are extended, not removed.
+
+Both staff and post movement perform authorization, state comparison and save under a token-row lock. A changed state returns 409 / token_move_conflict with the current authorized token in error metadata; no coordinates are written. Forbidden and invisible requests fail before precondition/conflict data and return no current-token payload. Post moves lock the parent post, then token, then recheck/lock the current association. Token-before-embed agrees with map deletion's order. Reassignment waits for a movement's row lock; a movement waiting behind reassignment reads the new owner before deciding authorization. Assignment responses refresh the saved model to avoid returning coordinates loaded before a concurrent movement.
+
+The client queue sends its last acknowledged version for each chained move and updates that version on success without replacing a newer optimistic destination. A conflict, permission denial, missing token or precondition error stops/discards pending stale destinations. Valid matching conflict data restores the authoritative position/version. Any active newer drag on that token is cancelled; it is not replayed automatically. The user sees a local message and may intentionally repeat a new gesture. Both editor and embedded board use this behavior; normal transient failures retain existing rollback semantics.
+
+## Scope limits
+
+This is a current-representation validator, not a monotonic history number or a lock held while a user drags. If position/owner return to exactly the same state, the marker can match again (A → B → A); no movement history is stored. Identical-state no-ops can share a version. There is no promise of detecting every historical gesture. Presence, reservations, WebSockets and a durable revision/history schema are outside this change. The existing five-second visible snapshot transport remains. Do not call this a secret authorization token: permissions remain independent PHP checks.
+
+## Automated evidence
+
+- Queue tests cover acknowledged-version chaining, discarding pending intent on conflict/revocation, matching-token validation and malformed server coordinates. Existing rapid-write and transient-error tests remain.
+- Real Flarum browser/API cases cover signed-zero/fractional-coordinate round trips and immediate reuse of the returned validator; both route preconditions; stale rejection without mutation; sync/API version consistency; competing staff/player requests with one 200 and one 409 across four rapid rounds; actual pointer conflict/retry with local feedback; and cancellation of a newer active drag in both editor and post with no automatic replay.
+- A deterministic reassignment fixture holds the synthetic token's row in a separate DB connection, starts the player's move, and requires InnoDB monitor evidence of a genuine PRIMARY-record wait on that exact token. Only then does it assign the synthetic token to the fixture admin and commit. The waiting request must return 403, without token metadata or changed coordinates. The helper refuses non-loopback/nonnamed disposable databases and nonfixture tokens/users. It uses the real MariaDB engine, not a mocked permission helper. Early information_schema monitoring failed to observe a wait that SHOW ENGINE confirmed; the corrected monitor still requires the exact locked record. No authorization assertion was relaxed.
+- Runtime visibility tests retain hidden/private post/discussion and independent extension-scoper denials. Successful legacy fixture moves now supply an observed version; forged denial fixtures remain unchanged. Conflict tests explicitly retain captured stale values, rather than fetching a newer one for the tested write.
+
+CI uses four PHP built-in-server workers to allow true concurrent requests on the included public Ubuntu runner; no paid runner/service. `MAPS_FORUM_ROOT` identifies only the disposable installed fixture. Local Docker runs may set `MAPS_FIXTURE_PHP_DOCKER=map-lab-php:8.3`; this is test-only infrastructure. Do not run fixture suites against the owner's DB.
+
+## Owner acceptance
+
+Install only the exact final CI-tested source in a new lab test branch, preserve current code/generated assets, build JS, regenerate autoload and clear cache. No migrate command. Hard-refresh **all** test browser profiles; old bundles intentionally receive 428. Use a disposable map/post.
+
+Open two clients on the same token. Hold a drag in the first, commit a move in the second, then release the first. The second position must remain saved; the first shows a conflict and adopts the saved position. A fresh deliberate drag then succeeds. Repeat in the staff editor and check own/other token permissions after reassignment. Normal topics/replies/BBCode and snapshot propagation remain required. No original protected map/post association is changed for testing. Exact commits and final local/CI results are recorded in PROJECT-CONTEXT; owner acceptance is separate from automated success.
+
+Local final: 23/23 browser (4.1m), 55/55 JS/build, Composer/PHP syntax/access/grid/transaction/migration and runtime visibility/batch checks passed. Exact final commit/CI and owner acceptance are recorded separately in PROJECT-CONTEXT. Production dist is rebuilt for tests and is not committed before owner acceptance.

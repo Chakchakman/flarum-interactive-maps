@@ -1,3 +1,5 @@
+import { currentConflictToken, terminalMoveError } from './tokenMoveConflict.mjs';
+
 /**
  * Serialize writes for each token in one browser tab.
  *
@@ -5,8 +7,8 @@
  * flight. A server reply never writes token coordinates to the page: the
  * current optimistic position belongs to the user's newest action.
  *
- * This deliberately does not solve simultaneous edits from different clients;
- * that belongs to the multi-client synchronisation milestone.
+ * Every send uses the last acknowledged movement state. Conflicts stop the
+ * queue instead of replaying stale local intent over another client.
  */
 export class LatestTokenMoveQueue {
   constructor(send, { onSuccess = () => {}, onFailure = () => {}, onDrained = () => {} } = {}) {
@@ -27,7 +29,7 @@ export class LatestTokenMoveQueue {
     if (!entry) {
       entry = {
         pending: null,
-        confirmed: { x: initialConfirmed.x, y: initialConfirmed.y },
+        confirmed: { ...initialConfirmed },
         inFlight: false,
       };
       this.entries.set(key, entry);
@@ -46,13 +48,23 @@ export class LatestTokenMoveQueue {
         const target = entry.pending;
         entry.pending = null;
         try {
-          const reply = await this.send(key, target);
+          const reply = await this.send(key, target, { ...entry.confirmed });
           entry.confirmed = {
             x: Number(reply?.x ?? target.x),
             y: Number(reply?.y ?? target.y),
+            ...(reply?.moveVersion ? { moveVersion: reply.moveVersion } :
+              entry.confirmed.moveVersion ? { moveVersion: entry.confirmed.moveVersion } : {}),
           };
-          this.onSuccess(key);
+          this.onSuccess(key, reply);
         } catch (error) {
+          if (terminalMoveError(error)) {
+            entry.pending = null;
+            const current = currentConflictToken(error);
+            // A malformed response must never apply another token's state.
+            if (current && String(current.id) === key) entry.confirmed = current;
+            this.onFailure(key, { ...entry.confirmed }, error);
+            break;
+          }
           // If another target has been queued, it should get its own chance
           // to save; do not snap back to a stale position in the meantime.
           if (!entry.pending) {

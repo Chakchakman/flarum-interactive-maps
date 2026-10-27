@@ -84,10 +84,12 @@ try {
     $checkSync(true);
     $move = fn () => (new MovePostTokenController)->handle(RequestUtil::withActor(
         (new ServerRequest)->withQueryParams(['postId' => $postId, 'tokenId' => $tokenId])
-            ->withParsedBody(['x' => 0.9, 'y' => 0.1, 'postId' => $postId, 'mapId' => $mapId]), $actor
+            ->withParsedBody(['x' => 0.9, 'y' => 0.1, 'postId' => $postId, 'mapId' => $mapId,
+                'moveVersion' => \ChakChakman\InteractiveMaps\Models\TokenMoveVersion::forToken(\ChakChakman\InteractiveMaps\Models\Token::findOrFail($tokenId))]), $actor
     ));
     $attach = fn () => (new AttachMapToPostController)->handle(RequestUtil::withActor(
-        (new ServerRequest)->withParsedBody(['postId' => $postId, 'mapId' => $mapId]), $actor
+        (new ServerRequest)->withParsedBody(['postId' => $postId, 'mapId' => $mapId,
+                'moveVersion' => \ChakChakman\InteractiveMaps\Models\TokenMoveVersion::forToken(\ChakChakman\InteractiveMaps\Models\Token::findOrFail($tokenId))]), $actor
     ));
     $check = function ($response, int $status, string $label) {
         $body = (string) $response->getBody();

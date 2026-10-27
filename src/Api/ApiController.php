@@ -127,12 +127,45 @@ abstract class ApiController
         return $data;
     }
 
+    // Caller must hold the token row lock and have checked current access.
+    protected function applyTokenMove(Token $token, array $data): JsonApiResponse
+    {
+        if (!isset($data['x'], $data['y']) || !is_numeric($data['x']) || !is_numeric($data['y'])) {
+            return $this->error('Нужны координаты x и y');
+        }
+        $x = (float) $data['x'];
+        $y = (float) $data['y'];
+        if (!is_finite($x) || !is_finite($y) || $x < 0 || $x > 1 || $y < 0 || $y > 1) {
+            return $this->error('Координаты должны быть в диапазоне 0..1');
+        }
+        if (!is_string($data['moveVersion'] ?? null) || !preg_match('/^[a-f0-9]{64}$/D', $data['moveVersion'])) {
+            return new JsonApiResponse(['errors' => [[
+                'status' => '428', 'code' => 'token_move_precondition',
+                'detail' => 'Обновите страницу перед перемещением фишки.',
+            ]]], 428);
+        }
+        if (!hash_equals(\ChakChakman\InteractiveMaps\Models\TokenMoveVersion::forToken($token), $data['moveVersion'])) {
+            return new JsonApiResponse(['errors' => [[
+                'status' => '409', 'code' => 'token_move_conflict',
+                'detail' => 'Фишка уже изменена в другом окне. Положение обновлено; повторите перемещение.',
+                'meta' => ['currentToken' => $this->tokenResource($token)],
+            ]]], 409);
+        }
+        $token->x = $x;
+        $token->y = $y;
+        $token->save();
+        // PDO may round float bindings: return the actual stored state/version.
+        $token->refresh();
+        return $this->document($this->tokenResource($token));
+    }
+
     protected function tokenData(Token $token): array
     {
         $owner = $token->owner;
         return [
             'id' => $token->id,
             'mapId' => $token->map_id,
+            'moveVersion' => \ChakChakman\InteractiveMaps\Models\TokenMoveVersion::forToken($token),
             'name' => $token->name,
             'imageUrl' => $token->image_url,
             'x' => (float) $token->x,

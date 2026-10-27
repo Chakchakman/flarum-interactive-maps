@@ -23,6 +23,8 @@ class AssignTokenController extends ApiController implements RequestHandlerInter
         }
         $token->owner_user_id = $owner ? $owner->id : null;
         $token->save();
+        // A movement may have committed while assignment waited for the row.
+        $token->refresh();
         return $this->document($this->tokenResource($token));
     }
 }

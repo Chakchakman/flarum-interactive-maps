@@ -1,3 +1,4 @@
+import { terminalMoveError } from '../tokenMoveConflict.mjs';
 import Component from 'flarum/common/Component';
 import { endpoint, displayError } from '../api';
 import { normalizeMapResponse, normalizeToken, resourceBody } from '../apiResponse.mjs';
@@ -27,24 +28,31 @@ export default class EmbeddedPostMap extends Component {
     this.syncEpoch = 0;
     this.serverCanManage = null;
     this.moves = new LatestTokenMoveQueue(
-      async (id, coords) => {
+      async (id, coords, confirmed) => {
         const response = await app.request({
           method: 'POST',
           url: endpoint(`chak-map-embeds/${this.postId}/tokens/${id}/move`),
-          body: resourceBody('chak-tokens', coords),
+          body: resourceBody('chak-tokens', { ...coords, moveVersion: confirmed.moveVersion }),
+          errorHandler: () => {},
         });
         return normalizeToken(response.data);
       },
       {
-        onSuccess: () => {
+        onSuccess: (id, saved) => {
+          const token = this.map?.tokens.find(item => String(item.id) === String(id));
+          if (token && saved?.moveVersion) token.moveVersion = saved.moveVersion;
           this.moveError = '';
         },
         onFailure: (id, lastConfirmed, error) => {
           if (this.removed) return;
+          if (terminalMoveError(error) && String(this.dragging?.token.id) === String(id)) {
+            this.endDrag({ pointerId: this.dragging.pointerId }, true);
+          }
           const token = this.map?.tokens.find((item) => String(item.id) === String(id));
           if (token && String(this.dragging?.token.id) !== String(id)) {
             token.x = lastConfirmed.x;
             token.y = lastConfirmed.y;
+            if (lastConfirmed.moveVersion) token.moveVersion = lastConfirmed.moveVersion;
           }
           this.moveError = 'Не удалось переместить фишку: ' + displayError(error);
         },
@@ -205,6 +213,7 @@ export default class EmbeddedPostMap extends Component {
       rect,
       origX: token.x,
       origY: token.y,
+      moveVersion: token.moveVersion,
     };
     event.currentTarget.classList.add('is-dragging');
     this.moveListener = (e) => this.moveDrag(e);
@@ -226,7 +235,7 @@ export default class EmbeddedPostMap extends Component {
 
   endDrag(event, cancelled) {
     if (!this.dragging || event.pointerId !== this.dragging.pointerId) return;
-    const { token, element, origX, origY } = this.dragging;
+    const { token, element, origX, origY, moveVersion } = this.dragging;
     this.dragging = null;
     this.detachDragListeners();
     element.classList.remove('is-dragging');
@@ -251,7 +260,7 @@ export default class EmbeddedPostMap extends Component {
       this.moves.enqueue(
         token.id,
         { x: token.x, y: token.y },
-        { x: origX, y: origY }
+        { x: origX, y: origY, moveVersion }
       );
     }
     this.requestRedraw();

@@ -82,3 +82,8 @@ Map managers can choose a #RRGGBB grid color and thickness from 0.5 to 5 px in h
 ## v0.3 first step — visible token snapshots (owner-authorized 2026-10-27)
 
 Embedded boards share an authenticated read-only batch endpoint scoped by post visibility, with at most 20 post IDs per request. Poll only visible/near-visible boards in visible tabs, about every five seconds, with bounded error backoff and no overlapping cycles. Update token positions/ownership without resetting viewport state or replacing active local moves; reject a read whose local activity epoch changed while it was in flight. Unavailable posts reveal no map/token data. The first step retains existing write semantics; distributed conflict rejection and presence are subsequent work, not a guarantee already provided. No schema change or paid realtime service is introduced. Background/grid/title changes retain the explicit refresh action in this step.
+
+
+## v0.3 next step — conditional movement (2026-10-27)
+
+Both movement routes require a current-state validator carried by token reads. Under a short DB row lock, recheck access/owner, compare state and save; reject stale writes with 409 and authorized current state. Reject missing preconditions with 428 so old clients cannot silently overwrite a protected write. A client conflict cancels stale pending/active intent, shows local feedback and requires a new deliberate gesture; it never automatically replays over another client. This step uses no schema change and does not claim monotonic gesture history (an identical restored state can reuse its validator). Permissions remain independent of the validator.

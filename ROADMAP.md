@@ -91,3 +91,8 @@ Focused follow-ups: circular token image fit; native user avatars in owner sugge
 ### v0.3 Alpha.1 in development — 2026-10-27
 
 `feature/post-map-sync`: visible embedded boards share bounded token polling; actor-specific post privacy remains authoritative, local active writes and stale GETs are protected, network errors back off. No migrations/external realtime service. Final code `851f38b` passed 51 JS tests, 17 browser scenarios, PHP/Windows checks and both CI workflows; owner confirmed automatic cross-client movement on 2026-10-27; reassignment/background-tab manual checks remain separate. Exact runs and installation commands are tracked in PROJECT-CONTEXT and QA-v0.3-alpha1-post-sync. The next focused v0.3 work is competing-write conflict handling; presence remains provisional. Current last-committed-write semantics are not described as conflict protection.
+
+
+### v0.3 Alpha.2 in development — 2026-10-27
+
+`feature/token-move-conflicts`: current-state movement preconditions, transactional row locking and fresh ownership checks, stale-write rejection and explicit client recovery in post/editor. No schema migration. Old open tabs require refresh (428) before writes. Dedicated concurrency/ownership-race/active-drag tests supplement the Alpha.1 suite; final results and owner acceptance remain separate. See QA-v0.3-alpha2-move-conflicts. Presence and durable history remain future work.

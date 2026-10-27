@@ -29,40 +29,25 @@ class MovePostTokenController extends ApiController implements RequestHandlerInt
             return $this->error('Карта или фишка не найдена', 404);
         }
 
-        // Resolve the post through Flarum's actor-specific visibility scopes.
-        // Do not query map/token information before access to the post is proven.
-        $post = Post::query()->whereVisibleTo($actor)->find($postId);
-        if (!$post || !PostMapAccess::canView($actor, $post)) {
-            return $this->error('Карта или фишка не найдена', 404);
-        }
-
-        $embed = MapEmbed::query()->where('post_id', $postId)->first();
-        if (!$embed) return $this->error('Карта или фишка не найдена', 404);
-
-        $token = Token::query()
-            ->where('map_id', $embed->map_id)
-            ->find($tokenId);
-        if (!$token) return $this->error('Карта или фишка не найдена', 404);
-
-        if (!PostTokenMoveAccess::canMove($actor, $post, $token, (int) $embed->map_id)) {
-            return $this->error('Нельзя перемещать чужую фишку', 403);
-        }
-
-        $data = $this->data($request);
-        if (!isset($data['x'], $data['y'])
-            || !is_numeric($data['x']) || !is_numeric($data['y'])) {
-            return $this->error('Нужны координаты x и y');
-        }
-        $x = (float) $data['x'];
-        $y = (float) $data['y'];
-        if (!is_finite($x) || !is_finite($y) || $x < 0 || $x > 1 || $y < 0 || $y > 1) {
-            return $this->error('Координаты должны быть в диапазоне 0..1');
-        }
-
-        $token->x = $x;
-        $token->y = $y;
-        $token->save();
-
-        return $this->document($this->tokenResource($token));
+        return Token::query()->getQuery()->getConnection()->transaction(function () use ($actor, $request, $postId, $tokenId) {
+            // Lock the parent, then token, then association. Token-before-embed
+            // agrees with map deletion; recheck the link after any token wait.
+            $post = Post::query()->whereVisibleTo($actor)->lockForUpdate()->find($postId);
+            if (!$post || !PostMapAccess::canView($actor, $post)) {
+                return $this->error('Карта или фишка не найдена', 404);
+            }
+            $embed = MapEmbed::query()->where('post_id', $postId)->first();
+            if (!$embed) return $this->error('Карта или фишка не найдена', 404);
+            $token = Token::query()->where('map_id', $embed->map_id)->lockForUpdate()->find($tokenId);
+            if (!$token) return $this->error('Карта или фишка не найдена', 404);
+            $currentEmbed = MapEmbed::query()->where('post_id', $postId)
+                ->where('map_id', $token->map_id)->lockForUpdate()->first();
+            if (!$currentEmbed) return $this->error('Карта или фишка не найдена', 404);
+            // Ownership is read from the locked current row, not a pre-lock copy.
+            if (!PostTokenMoveAccess::canMove($actor, $post, $token, (int) $embed->map_id)) {
+                return $this->error('Нельзя перемещать чужую фишку', 403);
+            }
+            return $this->applyTokenMove($token, $this->data($request));
+        });
     }
 }

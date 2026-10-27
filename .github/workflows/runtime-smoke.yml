@@ -2,7 +2,7 @@ name: Flarum runtime smoke
 on:
   pull_request:
   push:
-    branches: ['fix/flarum-runtime-smoke', 'feature/composer-map-attachment', 'feature/token-owner-search', 'feature/circular-tokens', 'feature/owner-avatars', 'feature/grid-style', 'feature/gm-privacy-regression', 'feature/post-map-sync']
+    branches: ['fix/flarum-runtime-smoke', 'feature/composer-map-attachment', 'feature/token-owner-search', 'feature/circular-tokens', 'feature/owner-avatars', 'feature/grid-style', 'feature/gm-privacy-regression', 'feature/post-map-sync', 'feature/token-move-conflicts']
   workflow_dispatch:
 permissions:
   contents: read
@@ -57,13 +57,15 @@ jobs:
           php "$GITHUB_WORKSPACE/tests/gridStyleMigrationTest.php" "$RUNNER_TEMP/forum/vendor/autoload.php"
           php "$GITHUB_WORKSPACE/scripts/Migrate-GridStyle.php" --approved-after-backup
           php "$GITHUB_WORKSPACE/tests/postMapVisibilityRuntimeTest.php" "$RUNNER_TEMP/forum" --isolated-forum
-          php -S 127.0.0.1:8888 -t public > "$RUNNER_TEMP/forum-server.log" 2>&1 &
+          PHP_CLI_SERVER_WORKERS=4 php -S 127.0.0.1:8888 -t public > "$RUNNER_TEMP/forum-server.log" 2>&1 &
       - name: Install browser
         working-directory: tests/browser
         run: |
           npm ci
           npx playwright install --with-deps chromium
       - name: Exercise forum UI
+        env:
+          MAPS_FORUM_ROOT: ${{ runner.temp }}/forum
         working-directory: tests/browser
         run: npm test
       - name: Save browser diagnostics

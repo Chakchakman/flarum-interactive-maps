@@ -20,20 +20,11 @@ class MoveTokenController extends ApiController implements RequestHandlerInterfa
         }
         // Check permissions before looking up token IDs so ordinary users
         // cannot enumerate which token identifiers exist.
-        $token = Token::find($this->id($request));
-        if (!$token) return $this->error('Фишка не найдена', 404);
-        $data = $this->data($request);
-        if (!isset($data['x'], $data['y']) || !is_numeric($data['x']) || !is_numeric($data['y'])) {
-            return $this->error('Нужны координаты x и y');
-        }
-        $x = (float) $data['x'];
-        $y = (float) $data['y'];
-        if (!is_finite($x) || !is_finite($y) || $x < 0 || $x > 1 || $y < 0 || $y > 1) {
-            return $this->error('Координаты должны быть в диапазоне 0..1');
-        }
-        $token->x = $x;
-        $token->y = $y;
-        $token->save();
-        return $this->document($this->tokenResource($token));
+        $query = Token::query();
+        return $query->getQuery()->getConnection()->transaction(function () use ($query, $request) {
+            $token = $query->lockForUpdate()->find($this->id($request));
+            if (!$token) return $this->error('Фишка не найдена', 404);
+            return $this->applyTokenMove($token, $this->data($request));
+        });
     }
 }
