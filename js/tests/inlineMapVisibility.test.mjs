@@ -29,9 +29,9 @@ test('post stream renders an unkeyed map vnode alongside unkeyed Flarum comment 
   // Keying only the injected map crashes the Mithril post stream.
   const { readFile } = await import('node:fs/promises');
   const source = await readFile(new URL('../src/forum/index.js', import.meta.url), 'utf8');
-  const start = source.indexOf('children.push(<EmbeddedPostMap');
-  const end = source.indexOf('/>);', start);
-  assert.ok(start >= 0 && end > start, 'inline map vnode must be present');
-  const mapVnode = source.slice(start, end + 4);
-  assert.doesNotMatch(mapVnode, /\bkey\s*=/, 'do not mix keyed and unkeyed children in CommentPost.content()');
+  const mapVnodes = source.match(/<EmbeddedPostMap\b[\s\S]*?\/>/g) || [];
+  assert.ok(mapVnodes.length >= 2, 'map vnodes must cover Comment and legacy content integration');
+  for (const mapVnode of mapVnodes) {
+    assert.doesNotMatch(mapVnode, /\bkey\s*=/, 'do not mix keyed and unkeyed children');
+  }
 });

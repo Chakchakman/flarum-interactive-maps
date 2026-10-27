@@ -17,6 +17,7 @@ export default function composerMap() {
       items.add('chakComposerMap', <span className="ChakComposerMap">
         <Button type="button" className="Button Button--link" icon="fas fa-map-marked-alt"
           disabled={this.loading} onclick={() => app.modal.show(AttachMapModal, {
+            selection: map,
             onSelect: (chosen) => selection(chosen),
           })}>{map ? 'Карта: ' + map.title : 'Прикрепить карту'}</Button>
         {map && <Button type="button" className="Button Button--link"
@@ -25,7 +26,11 @@ export default function composerMap() {
     });
     extend(Composer, 'data', function (data) {
       const map = this.composer.fields.chakMapSelection?.();
-      if (map && app.forum.attribute('canEmbedChakMaps') === true) data.chakMapId = Number(map.id);
+      if (map && app.forum.attribute('canEmbedChakMaps') === true) {
+        data.chakMapId = Number(map.id);
+        data.chakMapDisplayPosition = map.displayPosition || 'below';
+        data.chakMapInitiallyCollapsed = map.startsCollapsed === true;
+      }
     });
     override(Composer, 'hasChanges', function (original) {
       return !!original() || !!this.composer.fields.chakMapSelection?.();

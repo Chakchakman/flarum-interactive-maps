@@ -32,6 +32,10 @@ return [
 
     (new Extend\ApiResource(DiscussionResource::class))
         ->fields(fn () => [
+            Schema\Str::make('chakMapDisplayPosition')->visible(false)
+                ->writable(fn ($model, Context $context) => $context->creating())->set(function () {}),
+            Schema\Boolean::make('chakMapInitiallyCollapsed')->visible(false)
+                ->writable(fn ($model, Context $context) => $context->creating())->set(function () {}),
             Schema\Integer::make('chakMapId')->visible(false)
                 ->writable(fn ($model, Context $context) => $context->creating())
                 ->set(function () {}),
@@ -42,6 +46,10 @@ return [
 
     (new Extend\ApiResource(PostResource::class))
         ->fields(fn () => [
+            Schema\Str::make('chakMapDisplayPosition')->visible(false)
+                ->writable(fn ($model, Context $context) => $context->creating())->set(function () {}),
+            Schema\Boolean::make('chakMapInitiallyCollapsed')->visible(false)
+                ->writable(fn ($model, Context $context) => $context->creating())->set(function () {}),
             Schema\Integer::make('chakMapId')->visible(false)
                 ->writable(fn ($model, Context $context) => $context->creating())
                 ->set(function () {}),
@@ -73,28 +81,11 @@ return [
     (new Extend\ApiResource(PostResource::class))
         ->fields(fn () => [
             Schema\Boolean::make('hasChakMap')
-                ->get(function (Post $post, Context $context): bool {
-                    if (!($post instanceof CommentPost)
-                        || $post->hidden_at !== null
-                        || $context->getActor()->isGuest()) {
-                        return false;
-                    }
-
-                    // One indexed lookup per discussion instead of one per post.
-                    // PHP static variables are scoped to this HTTP request.
-                    static $embedPostsByDiscussion = [];
-                    $discussionId = (int) $post->discussion_id;
-                    if (!isset($embedPostsByDiscussion[$discussionId])) {
-                        $postIds = MapEmbed::query()
-                            ->join('posts', 'posts.id', '=', 'chak_map_embeds.post_id')
-                            ->where('posts.discussion_id', $discussionId)
-                            ->pluck('chak_map_embeds.post_id')
-                            ->all();
-                        $embedPostsByDiscussion[$discussionId] = array_fill_keys($postIds, true);
-                    }
-
-                    return isset($embedPostsByDiscussion[$discussionId][$post->id]);
-                }),
+                ->get(fn (Post $post, Context $context) => \ChakChakman\InteractiveMaps\Api\PostEmbedHint::get($post, $context) !== null),
+            Schema\Str::make('chakMapPosition')
+                ->get(fn (Post $post, Context $context) => \ChakChakman\InteractiveMaps\Api\PostEmbedHint::get($post, $context)['displayPosition'] ?? 'below'),
+            Schema\Boolean::make('chakMapStartsCollapsed')
+                ->get(fn (Post $post, Context $context) => \ChakChakman\InteractiveMaps\Api\PostEmbedHint::get($post, $context)['startsCollapsed'] ?? false),
         ]),
 
     (new Extend\Frontend('forum'))
@@ -115,6 +106,7 @@ return [
         ->post('/chak-tokens/{id}/move', 'chak.tokens.move', MoveTokenController::class)
         ->patch('/chak-tokens/{id}/owner', 'chak.tokens.assign', AssignTokenController::class)
         ->post('/chak-map-embeds', 'chak.map-embeds.attach', AttachMapToPostController::class)
+        ->patch('/chak-map-embeds/{id}', 'chak.map-embeds.presentation', \ChakChakman\InteractiveMaps\Api\UpdateEmbedPresentationController::class)
         ->get('/chak-map-embeds/{id}', 'chak.map-embeds.show', ShowPostMapController::class)
         ->delete('/chak-map-embeds/{id}', 'chak.map-embeds.detach', DetachMapFromPostController::class)
         // A player can move only a token assigned to them on a visible, linked post.

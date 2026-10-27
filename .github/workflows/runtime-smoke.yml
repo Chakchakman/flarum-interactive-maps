@@ -2,7 +2,7 @@ name: Flarum runtime smoke
 on:
   pull_request:
   push:
-    branches: ['fix/flarum-runtime-smoke', 'feature/composer-map-attachment', 'feature/token-owner-search', 'feature/circular-tokens', 'feature/owner-avatars', 'feature/grid-style', 'feature/gm-privacy-regression', 'feature/post-map-sync', 'feature/token-move-conflicts', 'feature/sync-performance', 'fix/build-dependency-audit']
+    branches: ['fix/flarum-runtime-smoke', 'feature/composer-map-attachment', 'feature/token-owner-search', 'feature/circular-tokens', 'feature/owner-avatars', 'feature/grid-style', 'feature/gm-privacy-regression', 'feature/post-map-sync', 'feature/token-move-conflicts', 'feature/sync-performance', 'fix/build-dependency-audit', 'feature/embed-presentation']
   workflow_dispatch:
 permissions:
   contents: read
@@ -55,6 +55,7 @@ jobs:
           php flarum cache:clear
           php "$GITHUB_WORKSPACE/tests/composerTransactionTest.php" "$RUNNER_TEMP/forum/vendor/autoload.php"
           php "$GITHUB_WORKSPACE/tests/gridStyleMigrationTest.php" "$RUNNER_TEMP/forum/vendor/autoload.php"
+          php "$GITHUB_WORKSPACE/tests/embedPresentationMigrationTest.php" "$RUNNER_TEMP/forum/vendor/autoload.php"
           php "$GITHUB_WORKSPACE/scripts/Migrate-GridStyle.php" --approved-after-backup
           php "$GITHUB_WORKSPACE/tests/postMapVisibilityRuntimeTest.php" "$RUNNER_TEMP/forum" --isolated-forum
           php "$GITHUB_WORKSPACE/tests/postMapSyncPerformanceTest.php" "$RUNNER_TEMP/forum" --isolated-forum

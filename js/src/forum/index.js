@@ -1,6 +1,8 @@
 import { extend } from 'flarum/common/extend';
 import HeaderPrimary from 'flarum/forum/components/HeaderPrimary';
 import Link from 'flarum/common/components/Link';
+import Comment from 'flarum/forum/components/Comment';
+import { insertMapAtBody } from './embedPresentation.mjs';
 import CommentPost from 'flarum/forum/components/CommentPost';
 import EmbeddedPostMap from './components/EmbeddedPostMap';
 import { shouldRenderInlineMap } from './inlineMapVisibility.mjs';
@@ -50,6 +52,8 @@ app.initializers.add('chakchakman-interactive-maps', () => {
       || app.forum.attribute('canEmbedChakMaps') !== true) return;
 
     if (post.attribute('hasChakMap') === true) {
+      items.add('chakMapPresentation', <Button icon="fas fa-sliders-h"
+        onclick={() => app.modal.show(AttachMapModal, { post, settingsOnly: true })}>Отображение карты</Button>);
       items.add('chakDetachMap', <Button icon="fas fa-unlink"
         onclick={() => detachMapFromPost(post)}>Открепить карту</Button>);
     } else {
@@ -68,13 +72,23 @@ app.initializers.add('chakchakman-interactive-maps', () => {
       isHidden: post.isHidden(),
       authenticated: !!app.session.user,
     })) {
-      // Flarum's CommentPost uses SubtreeRetainer. Force a parent diff after
-      // an async board/image load or the child can remain stuck on "loading".
-      // CommentPost.content() contains unkeyed Flarum nodes. Adding a keyed
-      // child mixes vnode key modes and crashes Mithril's entire post stream.
-      children.push(<EmbeddedPostMap postId={post.id()}
-        invalidateParent={() => this.subtree.invalidate()} />);
+      const comment = children.find(child => child?.tag === Comment);
+      if (comment) {
+        comment.attrs.chakMapPost = post;
+        comment.attrs.chakInvalidateParent = () => this.subtree.invalidate();
+      } else {
+        insertMapAtBody(children, <EmbeddedPostMap postId={post.id()}
+          startsCollapsed={post.attribute('chakMapStartsCollapsed')}
+          invalidateParent={() => this.subtree.invalidate()} />, post.attribute('chakMapPosition'));
+      }
     }
+  });
+  extend(Comment.prototype, 'view', function (children) {
+    const post = this.attrs.chakMapPost;
+    if (!post) return;
+    insertMapAtBody(children, <EmbeddedPostMap postId={post.id()}
+      startsCollapsed={post.attribute('chakMapStartsCollapsed')}
+      invalidateParent={this.attrs.chakInvalidateParent} />, post.attribute('chakMapPosition'));
   });
   extend(HeaderPrimary.prototype, 'items', function (items) {
     // The permission is serialized by the server on the ForumResource.

@@ -17,6 +17,11 @@ final class ComposerMapAttachment
     public static function validate(Context $context): void
     {
         $attributes = $context->body()['data']['attributes'] ?? [];
+        $presentation = self::presentation($attributes);
+        if (!\ChakChakman\InteractiveMaps\Models\EmbedPresentation::valid($presentation)
+            || ($presentation && !array_key_exists('chakMapId', $attributes))) {
+            throw new ValidationException(['chakMapId' => 'Неверные параметры отображения карты.']);
+        }
         if (!array_key_exists('chakMapId', $attributes)) return;
 
         $actor = $context->getActor();
@@ -46,8 +51,17 @@ final class ComposerMapAttachment
             'map_id' => $id,
             'post_id' => $post->id,
             'created_by' => $context->getActor()->id,
+            ...\ChakChakman\InteractiveMaps\Models\EmbedPresentation::values(self::presentation($context->body()['data']['attributes'] ?? [])),
         ]);
 
         return $model;
     }
+    private static function presentation(array $attributes): array
+    {
+        $data = [];
+        if (array_key_exists('chakMapDisplayPosition', $attributes)) $data['displayPosition'] = $attributes['chakMapDisplayPosition'];
+        if (array_key_exists('chakMapInitiallyCollapsed', $attributes)) $data['startsCollapsed'] = $attributes['chakMapInitiallyCollapsed'];
+        return $data;
+    }
+
 }

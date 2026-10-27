@@ -9,7 +9,7 @@ The owner passed the supplied Alpha.7 picker/composer/owner-search, presentation
 
 | Order | Work | Completion evidence |
 | --- | --- | --- |
-| 1 | Owner acceptance of v0.3 Alpha.2 | Conditional moves implemented on `6499c8d`; 55 JS / 23 browser, PHP and both CI workflows pass; owner conflict/retry checks pending |
+| 1 | Owner acceptance of v0.3 Alpha.2 (completed) | Conditional moves implemented on `6499c8d`; 55 JS / 23 browser, PHP and both CI workflows pass; owner confirmed all four supplied checks on cumulative e917eaa, including conflict/retry and background/network recovery |
 | 2 | Finish v0.2/v0.3 release gates and prepare review | Existing owner-tested features retained; background-tab resume, device/theme checks, install/upgrade review and actual third-party privacy integration (if used) remain; release/merge requires owner decision |
 | 3 | Agree remaining v0.3 scope | Alpha.1 sync owner-tested, Alpha.2 conflicts automatically tested; presence remains provisional and is not automatically authorized |
 | 4 | Later agreed milestones | v0.4 measurement/markers; v0.5 image upload/layers; v0.6 fog of war; v0.7 session features; no expansion without scope agreement |
@@ -105,3 +105,8 @@ Focused follow-ups: circular token image fit; native user avatars in owner sugge
 ### Proposed embed presentation follow-up — 2026-10-27
 
 Owner requested above/below-text placement and spoiler-style collapse. [Design proposal](docs/EMBED-PRESENTATION-PLAN.md): per-attachment placement/default, viewer-local collapse and suspended polling while closed; existing defaults/rights preserved. Owner clarified that “map in a topic” means its first post, using the existing post association. This is not implemented and does not change the currently tested e917eaa build. Schema application remains subject to fresh backup and explicit approval.
+
+
+### Owner-accepted baseline and approved follow-ups — 2026-10-27
+
+e917eaa passed all four owner checks (ordinary forum/picker, conflict/retry, reassignment denial, background/network recovery). Release/merge is still a separate decision. Owner approved the presentation plan and requested generic creation placeholders plus local map background upload (pulled forward from v0.5). Implement these as focused branches; keep schema application subject to fresh backup/explicit approval. No other v0.5 layer/editor features are included.

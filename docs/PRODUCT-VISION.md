@@ -87,3 +87,12 @@ Embedded boards share an authenticated read-only batch endpoint scoped by post v
 ## v0.3 next step — conditional movement (2026-10-27)
 
 Both movement routes require a current-state validator carried by token reads. Under a short DB row lock, recheck access/owner, compare state and save; reject stale writes with 409 and authorized current state. Reject missing preconditions with 428 so old clients cannot silently overwrite a protected write. A client conflict cancels stale pending/active intent, shows local feedback and requires a new deliberate gesture; it never automatically replays over another client. This step uses no schema change and does not claim monotonic gesture history (an identical restored state can reuse its validator). Permissions remain independent of the validator.
+
+
+## Per-attachment presentation (owner-approved 2026-10-27)
+
+The attachment picker/composer offers above/below-text placement and initially expanded/collapsed state. A topic map is the first post's ordinary attachment, as explicitly confirmed. Persist these defaults per map/post association; existing attachments remain below/expanded. Only existing manage+embed+editable-post staff may change shared settings. Each authorized reader independently toggles their local view without changing the persisted default. Collapsed boards do not poll or initially fetch images/tokens; reopening proves current visibility and refreshes positions before allowing movement. Preserve in-flight write semantics, privacy and ordinary Flarum header/body/controls. Schema application to an existing forum requires a fresh backup and separate owner approval.
+
+## Local map background upload (owner-requested 2026-10-27)
+
+Map managers may select a background image from their device as an alternative to a URL. File bytes and dimensions must be bounded and validated server-side; filenames/MIME supplied by a browser do not authorize content. Store uploaded map images outside the public assets directory and serve only to map managers or authenticated viewers of an authorized visible post carrying that map. Avoid new paid services/dependencies, keep existing URL backgrounds and token images working. Exact supported raster formats/limits and backup requirements are documented with the implementation. This request does not add token-image uploads, layers or an image editor.

@@ -30,6 +30,10 @@ class AttachMapToPostController extends ApiController implements RequestHandlerI
             return $this->error('Нужны корректные postId и mapId', 400);
         }
 
+        if (!\ChakChakman\InteractiveMaps\Models\EmbedPresentation::valid($data)) {
+            return $this->error('Неверные параметры отображения карты');
+        }
+
         // Post visibility and edit rights are mandatory even for a GM.
         $post = Post::query()->whereVisibleTo($actor)->find($postId);
         if (!$post || !PostMapAccess::canAttach($actor, $post)) {
@@ -52,6 +56,7 @@ class AttachMapToPostController extends ApiController implements RequestHandlerI
                 'post_id' => $postId,
                 'map_id' => $mapId,
                 'created_by' => $actor->id,
+                ...\ChakChakman\InteractiveMaps\Models\EmbedPresentation::values($data),
             ]);
         } catch (QueryException $exception) {
             // The unique post_id constraint prevents concurrent second binds.
@@ -73,6 +78,8 @@ class AttachMapToPostController extends ApiController implements RequestHandlerI
             'attributes' => [
                 'postId' => (int) $embed->post_id,
                 'mapId' => (int) $embed->map_id,
+                'displayPosition' => $embed->display_position,
+                'startsCollapsed' => (bool) $embed->starts_collapsed,
             ],
         ];
     }

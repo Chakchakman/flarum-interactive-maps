@@ -15,6 +15,7 @@ $site = require $root.'/site.php';
 $container = $site->bootApp()->getContainer();
 
 use ChakChakman\InteractiveMaps\Api\ShowPostMapController;
+use ChakChakman\InteractiveMaps\Api\UpdateEmbedPresentationController;
 use ChakChakman\InteractiveMaps\Api\SyncPostMapsController;
 use ChakChakman\InteractiveMaps\Api\MovePostTokenController;
 use ChakChakman\InteractiveMaps\Api\AttachMapToPostController;
@@ -91,6 +92,10 @@ try {
         (new ServerRequest)->withParsedBody(['postId' => $postId, 'mapId' => $mapId,
                 'moveVersion' => \ChakChakman\InteractiveMaps\Models\TokenMoveVersion::forToken(\ChakChakman\InteractiveMaps\Models\Token::findOrFail($tokenId))]), $actor
     ));
+    $presentation = fn () => (new UpdateEmbedPresentationController)->handle(RequestUtil::withActor(
+        (new ServerRequest)->withQueryParams(['id' => $postId])
+            ->withParsedBody(['displayPosition' => 'above', 'startsCollapsed' => true]), $actor
+    ));
     $check = function ($response, int $status, string $label) {
         $body = (string) $response->getBody();
         if ($response->getStatusCode() !== $status) throw new LogicException($label.': '.$body);
@@ -99,6 +104,7 @@ try {
         }
     };
     $check($show(), 200, 'visible positive control');
+    $check($presentation(), 200, 'visible editable presentation positive control');
     $check($attach(), 200, 'visible editable attachment positive control');
     $check($move(), 200, 'visible owner movement positive control');
     $db->table('chak_tokens')->where('id', $tokenId)->update(['x' => 0.25, 'y' => 0.75]);
@@ -110,6 +116,7 @@ try {
         $checkSync(false);
         $check($move(), 404, "$table.$column movement");
         $check($attach(), 403, "$table.$column attachment");
+        $check($presentation(), 403, "$table.$column presentation");
         $saved = $db->table('chak_tokens')->find($tokenId);
         if ((float) $saved->x !== 0.25 || (float) $saved->y !== 0.75) throw new LogicException('Denied movement changed coordinates');
         $db->table($table)->where('id', $id)->update([$column => $column === 'hidden_at' ? null : false]);
@@ -133,6 +140,7 @@ try {
         $checkSync(false);
         $check($move(), 404, $table.' custom scope movement');
         $check($attach(), 403, $table.' custom scope attachment');
+        $check($presentation(), 403, $table.' custom scope presentation');
         $scopeState->blocked = false;
         $check($show(), 200, $table.' custom scope restoration');
         $checkSync(true);

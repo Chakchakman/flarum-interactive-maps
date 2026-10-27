@@ -9,12 +9,18 @@ import MapBoard from './MapBoard';
 import { postMapSync } from '../sharedPostMapSync';
 import { canDragPostToken } from '../inlineTokenPermission.mjs';
 
+let embedSequence = 0;
+
 // Interactive post map: all movement writes go through a post-scoped,
 // visibility-checked route. The staff editor uses a separate API.
 export default class EmbeddedPostMap extends Component {
   oninit(vnode) {
     super.oninit(vnode);
     this.postId = String(vnode.attrs.postId);
+    this.bodyId = 'chak-map-body-' + (++embedSequence);
+    this.collapsed = vnode.attrs.startsCollapsed === true;
+    this.nearVisible = false;
+    this.refreshOnOpen = false;
     this.map = null;
     this.loading = false;
     this.requested = false;
@@ -58,6 +64,7 @@ export default class EmbeddedPostMap extends Component {
           this.moveError = 'Не удалось переместить фишку: ' + displayError(error);
         },
         onDrained: () => {
+          if (this.refreshOnOpen && !this.collapsed) void this.load(true);
           this.requestRedraw();
         },
       }
@@ -83,13 +90,15 @@ export default class EmbeddedPostMap extends Component {
     if ('IntersectionObserver' in window) {
       this.observer = new IntersectionObserver((entries) => {
         const visible = entries.some(entry => entry.isIntersecting);
-        this.syncRegistration.setActive(visible);
-        if (visible && !this.requested) void this.load();
+        this.nearVisible = visible;
+        this.syncRegistration.setActive(visible && !this.collapsed);
+        if (visible && !this.collapsed && (!this.requested || this.refreshOnOpen)) void this.load();
       }, { rootMargin: '250px 0px' });
       this.observer.observe(vnode.dom);
     } else {
-      this.syncRegistration.setActive(true);
-      this.load();
+      this.nearVisible = true;
+      this.syncRegistration.setActive(!this.collapsed);
+      if (!this.collapsed) this.load();
     }
   }
 
@@ -108,7 +117,7 @@ export default class EmbeddedPostMap extends Component {
   }
 
   applySnapshot(snapshot) {
-    if (this.removed) return;
+    if (this.removed || this.collapsed) return;
     let changed = this.syncError !== '';
     this.syncError = '';
     if (!snapshot.available) {
@@ -133,7 +142,8 @@ export default class EmbeddedPostMap extends Component {
 
   async load(silent = false) {
     // An in-flight refresh must not overwrite a local drag or queued write.
-    if (this.loading || this.removed || this.dragging || this.moves.hasPending()) return;
+    if (this.loading || this.removed || this.collapsed || this.dragging || this.moves.hasPending()) return;
+    this.refreshOnOpen = false;
     const epoch = ++this.syncEpoch;
     this.requested = true;
     this.loading = true;
@@ -158,6 +168,7 @@ export default class EmbeddedPostMap extends Component {
       }
     } finally {
       this.loading = false;
+      if (this.refreshOnOpen && !this.collapsed) void this.load(true);
       this.requestRedraw();
     }
   }
@@ -184,6 +195,23 @@ export default class EmbeddedPostMap extends Component {
       this.requestRedraw();
     };
     img.src = url;
+  }
+
+  toggleCollapsed() {
+    if (!this.collapsed) {
+      if (this.dragging) this.endDrag({ pointerId: this.dragging.pointerId }, true);
+      this.syncEpoch++;
+      this.collapsed = true;
+      this.map = null;
+      this.unavailable = false;
+      this.refreshOnOpen = false;
+    } else {
+      this.collapsed = false;
+      this.refreshOnOpen = true;
+      void this.load(true);
+    }
+    this.syncRegistration?.setActive(this.nearVisible && !this.collapsed);
+    this.requestRedraw();
   }
 
   canMoveToken(token) {
@@ -274,7 +302,16 @@ export default class EmbeddedPostMap extends Component {
   view() {
     const map = this.map;
     return (
-      <section className="ChakMapEmbed" aria-label="Интерактивная карта">
+      <section className={'ChakMapEmbed' + (this.collapsed ? ' ChakMapEmbed--collapsed' : '')} aria-label="Интерактивная карта">
+        <div className="ChakMapEmbed-heading">
+          <strong>{map?.title || 'Игровая карта'}</strong>
+          <button type="button" className="Button Button--link Button--small"
+            aria-expanded={String(!this.collapsed)} aria-controls={this.bodyId}
+            onclick={() => this.toggleCollapsed()}>{this.collapsed ? 'Показать карту' : 'Свернуть карту'}</button>
+        </div>
+        <div id={this.bodyId} hidden={this.collapsed}>
+        {!this.collapsed && <>
+        {this.refreshOnOpen && !this.loading && <p className="ChakMaps-muted" role="status">Дожидаемся сохранения фишки…</p>}
         {!this.requested && <p className="ChakMaps-muted">Игровая карта загрузится при прокрутке сюда.</p>}
         {this.loading && <p className="ChakMaps-muted">Загружаем игровую карту…</p>}
         {!this.loading && this.unavailable && (
@@ -282,11 +319,8 @@ export default class EmbeddedPostMap extends Component {
         )}
         {!this.loading && map && (
           <>
-            <div className="ChakMapEmbed-heading">
-              <strong>{map.title}</strong>
-              <button type="button" className="Button Button--link Button--small"
-                onclick={() => this.load()}>Обновить карту</button>
-            </div>
+            <button type="button" className="Button Button--link Button--small"
+              onclick={() => this.load()}>Обновить карту</button>
             <MapBoard map={map}
               metrics={gridMetrics(map.gridSize, map.gridOffsetX, map.gridOffsetY, this.imageDimensions)}
               invalidateParent={() => this.attrs.invalidateParent?.()}
@@ -297,6 +331,8 @@ export default class EmbeddedPostMap extends Component {
             <p className="ChakMaps-muted">Перетаскивайте свою фишку. Для остальных фишек доступен только просмотр.</p>
           </>
         )}
+        </>}
+        </div>
       </section>
     );
   }

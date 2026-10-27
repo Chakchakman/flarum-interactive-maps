@@ -1,3 +1,4 @@
+import { presentationOptions } from '../embedPresentation.mjs';
 import Modal from 'flarum/common/components/Modal';
 import Button from 'flarum/common/components/Button';
 import { endpoint, displayError } from '../api';
@@ -15,11 +16,15 @@ export default class AttachMapModal extends Modal {
     this.error = '';
     this.loadError = '';
     this.closed = false;
-    this.loadMaps();
+    this.presentation = presentationOptions(this.attrs.settingsOnly ? {
+      displayPosition: this.attrs.post?.attribute('chakMapPosition'),
+      startsCollapsed: this.attrs.post?.attribute('chakMapStartsCollapsed'),
+    } : this.attrs.selection);
+    if (!this.attrs.settingsOnly) this.loadMaps();
   }
 
   className() { return 'AttachMapModal Modal--medium'; }
-  title() { return 'Прикрепить карту'; }
+  title() { return this.attrs.settingsOnly ? 'Отображение карты' : 'Прикрепить карту'; }
 
   get dismissibleOptions() {
     return this.loading
@@ -56,10 +61,10 @@ export default class AttachMapModal extends Modal {
   async attach(event) {
     event.preventDefault();
     const mapId = pickerMapId(this.maps, this.selectedId, this.query);
-    if (!mapId || this.loading || this.closed) return;
+    if ((!mapId && !this.attrs.settingsOnly) || this.loading || this.closed) return;
     if (this.attrs.onSelect) {
       const map = this.maps.find((item) => Number(item.id) === mapId);
-      this.attrs.onSelect({ id: mapId, title: map?.title || 'Карта #' + mapId });
+      this.attrs.onSelect({ id: mapId, title: map?.title || 'Карта #' + mapId, ...this.presentation });
       this.hide();
       return;
     }
@@ -70,11 +75,13 @@ export default class AttachMapModal extends Modal {
     this.error = '';
     try {
       await app.request({
-        method: 'POST', url: endpoint('chak-map-embeds'),
-        body: resourceBody('chak-map-embeds', { postId: Number(postId), mapId }),
+        method: this.attrs.settingsOnly ? 'PATCH' : 'POST',
+        url: endpoint('chak-map-embeds' + (this.attrs.settingsOnly ? '/' + postId : '')),
+        body: resourceBody('chak-map-embeds', { postId: Number(postId), mapId, ...this.presentation }),
       });
       // UI hint only; the server independently checks all access permissions.
-      post.pushAttributes({ hasChakMap: true });
+      post.pushAttributes({ hasChakMap: true, chakMapPosition: this.presentation.displayPosition,
+        chakMapStartsCollapsed: this.presentation.startsCollapsed });
       this.loading = false;
       if (!this.closed) this.hide();
     } catch (error) {
@@ -89,6 +96,7 @@ export default class AttachMapModal extends Modal {
     const maps = filterPickerMaps(this.maps, this.query);
     const mapId = pickerMapId(this.maps, this.selectedId, this.query);
     return <form className="Modal-body AttachMapModal-body" onsubmit={(event) => this.attach(event)}>
+      {!this.attrs.settingsOnly && <>
       <label for="chak-map-search">Название карты, ID или код экспорта</label>
       <input id="chak-map-search" className="FormControl" value={this.query}
         disabled={this.loading} placeholder="Например: Склад или [interactive-map id=9]"
@@ -110,10 +118,23 @@ export default class AttachMapModal extends Modal {
           <span><strong>{map.title}</strong><small>Карта #{map.id}</small></span>
         </button>)}
       </div>
+      </>}
+      <label for="chak-map-position">Расположение карты</label>
+      <select id="chak-map-position" className="FormControl" disabled={this.loading}
+        value={this.presentation.displayPosition}
+        onchange={event => this.presentation.displayPosition = event.target.value}>
+        <option value="above">Над текстом</option><option value="below">Под текстом</option>
+      </select>
+      <label for="chak-map-collapsed">Начальное состояние</label>
+      <select id="chak-map-collapsed" className="FormControl" disabled={this.loading}
+        value={String(this.presentation.startsCollapsed)}
+        onchange={event => this.presentation.startsCollapsed = event.target.value === 'true'}>
+        <option value="false">Развёрнута</option><option value="true">Свёрнута</option>
+      </select>
       {this.error && <p className="ChakMaps-error" role="alert">{this.error}</p>}
       <div className="AttachMapModal-actions">
         <Button type="submit" className="Button Button--primary" loading={this.loading}
-          disabled={!mapId || this.loading}>{mapId ? `Прикрепить карту #${mapId}` : 'Выбери карту'}</Button>
+          disabled={(!mapId && !this.attrs.settingsOnly) || this.loading}>{this.attrs.settingsOnly ? 'Сохранить' : mapId ? `Прикрепить карту #${mapId}` : 'Выбери карту'}</Button>
         <Button type="button" className="Button" disabled={this.loading} onclick={() => this.hide()}>Отмена</Button>
       </div>
     </form>;

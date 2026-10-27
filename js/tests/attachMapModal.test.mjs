@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
 import * as response from '../src/forum/apiResponse.mjs';
+import * as presentation from '../src/forum/embedPresentation.mjs';
 import * as picker from '../src/forum/mapPicker.mjs';
 const require = createRequire(import.meta.url);
 const { transformSync } = require('@babel/core');
@@ -22,7 +23,7 @@ function setup(request) {
     'flarum/common/components/Modal': Modal,
     'flarum/common/components/Button': class {},
     '../api': { endpoint: (path) => '/api/' + path, displayError: (error) => error.message },
-    '../apiResponse.mjs': response, '../mapPicker.mjs': picker,
+    '../embedPresentation.mjs': presentation, '../apiResponse.mjs': response, '../mapPicker.mjs': picker,
   };
   vm.runInNewContext(code, { exports, require: (id) => {
     if (!(id in modules)) throw new Error('Unexpected import ' + id);
@@ -31,6 +32,7 @@ function setup(request) {
   const modal = new exports.default();
   const changes = [];
   Object.assign(modal, { maps: [{ id: 9, title: 'Map' }], selectedId: 9, query: '',
+    presentation: presentation.presentationOptions(),
     loading: false, loadingMaps: false, closed: false, error: '', loadError: '',
     attrs: { post: { id: () => '2', pushAttributes: (attrs) => changes.push(attrs) } },
   });
@@ -57,7 +59,7 @@ test('attachment sends the post-scoped body once and updates post only after suc
   await modal.attach(event);
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, '/api/chak-map-embeds');
-  assert.equal(JSON.stringify(calls[0].body), JSON.stringify(response.resourceBody('chak-map-embeds', { postId: 2, mapId: 9 })));
+  assert.equal(JSON.stringify(calls[0].body), JSON.stringify(response.resourceBody('chak-map-embeds', { postId: 2, mapId: 9, displayPosition: 'below', startsCollapsed: false })));
   assert.equal(changes.length, 0);
   modal.hide();
   assert.equal(modal.closed, false);
