@@ -80,3 +80,6 @@ Then hard-refresh and test two separate browser profiles/accounts on a disposabl
 
 
 Final CI for exact installation commit `851f38ba0b34bfc4095ef383ec46e299ddf44152`: [runtime 40505899349](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40505899349) Success (6m55s), [Extension CI 40505899313](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40505899313) Success (37s). This final run covers all 17 browser cases including the timeout/restored-map extensions; 51 JS/build and PHP/Windows checks passed. The installation prerequisite above is satisfied; owner forum acceptance/release approval remain pending.
+
+
+Owner acceptance update, 2026-10-27: after resuming the interrupted lab update, the owner observed all token movement propagating automatically with a small delay, without manual map refresh. Cross-client movement is manually confirmed. Approximately five-second polling plus response time explains expected latency; no measured environment-only cause or WebSocket transport is claimed. Reassignment and actual background-tab resume remain separately unconfirmed manually; automated coverage remains green. No release/merge approval.
