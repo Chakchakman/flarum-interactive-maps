@@ -405,7 +405,7 @@ export default class MapPage extends Page {
                 <form className="ChakMaps-panel" onsubmit={this.addToken.bind(this)}>
                   <h3>Добавить фишку</h3>
                   <label for="chak-token-name">Имя</label>
-                  <input id="chak-token-name" className="FormControl" required value={this.tokenName} oninput={(e) => this.tokenName = e.target.value} placeholder="Сайлас МакГроу" />
+                  <input id="chak-token-name" className="FormControl" required value={this.tokenName} oninput={(e) => this.tokenName = e.target.value} placeholder="Имя фишки" />
                   <label for="chak-token-image">Адрес PNG/JPG</label>
                   <input id="chak-token-image" className="FormControl" required value={this.tokenImageUrl} oninput={(e) => this.tokenImageUrl = e.target.value} />
                   <label for="chak-token-owner-new">Владелец (username в Flarum)</label>

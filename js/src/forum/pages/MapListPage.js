@@ -127,7 +127,7 @@ export default class MapListPage extends Page {
               <form className="ChakMaps-panel" onsubmit={this.create.bind(this)}>
                 <h3>Новая карта</h3>
                 <label>Название</label>
-                <input className="FormControl" required maxlength="160" value={this.title} oninput={(event) => this.title = event.target.value} placeholder="Склад Zetatech" />
+                <input className="FormControl" required maxlength="160" value={this.title} oninput={(event) => this.title = event.target.value} placeholder="введите название карты" />
                 <label>Адрес фонового изображения</label>
                 <input className="FormControl" required value={this.backgroundUrl} oninput={(event) => this.backgroundUrl = event.target.value} placeholder="https://example.com/map.jpg" />
                 <button type="submit" className="Button Button--primary" disabled={this.creating}>{this.creating ? 'Создание…' : 'Создать карту'}</button>
