@@ -99,6 +99,8 @@ return [
         ->get('/chak-map-users', 'chak.maps.users.search', SearchMapUsersController::class)
         ->get('/chak-maps', 'chak.maps.index', ListMapsController::class)
         ->post('/chak-maps', 'chak.maps.create', CreateMapController::class)
+        ->post('/chak-maps/{id}/background', 'chak.maps.background.upload', \ChakChakman\InteractiveMaps\Api\UploadMapBackgroundController::class)
+        ->get('/chak-maps/{id}/background/{file}', 'chak.maps.background', \ChakChakman\InteractiveMaps\Api\ShowMapBackgroundController::class)
         ->get('/chak-maps/{id}', 'chak.maps.show', ShowMapController::class)
         ->patch('/chak-maps/{id}', 'chak.maps.update', UpdateMapController::class)
         ->delete('/chak-maps/{id}', 'chak.maps.delete', DeleteMapController::class)

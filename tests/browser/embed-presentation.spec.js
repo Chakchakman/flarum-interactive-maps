@@ -75,9 +75,17 @@ test('post attachment settings preserve text, validate defaults and can be chang
     const board = savedPost(player, target.id).locator('.ChakMapEmbed');
     await expect(board.getByRole('button', { name: 'Показать карту', exact: true })).toBeVisible();
     await api(page, 'PATCH', 'posts/' + target.id, { isHidden: true }, 200, 'posts');
+    const deniedRead = player.waitForResponse(response => new URL(response.url()).pathname === '/api/chak-map-embeds/' + target.id);
     await board.getByRole('button', { name: 'Показать карту', exact: true }).click();
-    await expect(board).toContainText('Карта в этом сообщении сейчас недоступна');
-    await expect(board.locator('.ChakMap-board')).toHaveCount(0);
+    expect((await deniedRead).status()).toBe(404);
+    // Flarum may update hasChakMap/isHidden and unmount the entire embed.
+    // Require the actual read denial and no rendered board in either lifecycle.
+    await expect(savedPost(player, target.id).locator('.ChakMap-board')).toHaveCount(0);
+    const forbiddenResponse = await player.request.get('/api/chak-map-embeds/' + target.id);
+    expect(forbiddenResponse.status()).toBe(404);
+    const forbidden = await forbiddenResponse.json();
+    expect(forbidden.data).toBeUndefined();
+    expect(forbidden.included).toBeUndefined();
     await api(page, 'PATCH', 'posts/' + target.id, { isHidden: false }, 200, 'posts');
   } finally { await context.close(); }
 });

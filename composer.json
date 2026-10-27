@@ -17,7 +17,8 @@
     "issues": "https://github.com/Chakchakman/flarum-interactive-maps/issues"
   },
   "require": {
-    "flarum/core": "^2.0"
+    "flarum/core": "^2.0",
+    "intervention/image": "^3.11"
   },
   "autoload": {
     "psr-4": {

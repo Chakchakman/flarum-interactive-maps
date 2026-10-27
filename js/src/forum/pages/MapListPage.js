@@ -11,6 +11,7 @@ export default class MapListPage extends Page {
     this.loading = true;
     this.title = '';
     this.backgroundUrl = '';
+    this.imageFile = null;
     this.error = '';
     this.creating = false;
     this.deletingIds = new Set();
@@ -39,16 +40,23 @@ export default class MapListPage extends Page {
   async create(event) {
     event.preventDefault();
     if (this.creating) return;
+    if (this.imageFile && this.imageFile.size > 10 * 1024 * 1024) { this.error = 'Изображение: не более 10 МиБ.'; return; }
     this.creating = true;
     this.error = '';
     try {
+      let upload;
+      if (this.imageFile) {
+        upload = new FormData(); upload.append('title', this.title.trim()); upload.append('image', this.imageFile);
+      }
       const result = await app.request({
         method: 'POST',
         url: endpoint('chak-maps'),
-        body: resourceBody('chak-maps', {
+        body: upload || resourceBody('chak-maps', {
           title: this.title.trim(),
           backgroundUrl: this.backgroundUrl.trim(),
         }),
+        ...(upload ? { serialize: value => value } : {}),
+        errorHandler: () => {},
       });
       m.route.set(app.route('chak.map', { id: normalizeMap(result.data).id }));
     } catch (error) {
@@ -126,10 +134,17 @@ export default class MapListPage extends Page {
             {this.canManage && (
               <form className="ChakMaps-panel" onsubmit={this.create.bind(this)}>
                 <h3>Новая карта</h3>
-                <label>Название</label>
-                <input className="FormControl" required maxlength="160" value={this.title} oninput={(event) => this.title = event.target.value} placeholder="введите название карты" />
-                <label>Адрес фонового изображения</label>
-                <input className="FormControl" required value={this.backgroundUrl} oninput={(event) => this.backgroundUrl = event.target.value} placeholder="https://example.com/map.jpg" />
+                <label for="chak-map-title">Название</label>
+                <input id="chak-map-title" className="FormControl" required disabled={this.creating} maxlength="160" value={this.title} oninput={(event) => this.title = event.target.value} placeholder="введите название карты" />
+                <label for="chak-map-background-url">Адрес фонового изображения</label>
+                <input id="chak-map-background-url" className="FormControl" required={!this.imageFile} disabled={this.creating || !!this.imageFile} value={this.backgroundUrl} oninput={(event) => this.backgroundUrl = event.target.value} placeholder="https://example.com/map.jpg" />
+                <label for="chak-map-background-file">Или загрузите изображение с устройства</label>
+                <input id="chak-map-background-file" className="FormControl" type="file" accept="image/png,image/jpeg"
+                  disabled={this.creating} oncreate={vnode => this.fileInput = vnode.dom}
+                  onchange={event => { this.imageFile = event.target.files?.[0] || null; this.error = ''; }} />
+                <p className="ChakMaps-muted">PNG или JPEG, до 10 МиБ, 8192 px по стороне и 16 мегапикселей. Действуют также лимиты сервера.</p>
+                {this.imageFile && <button type="button" className="Button Button--link" disabled={this.creating}
+                  onclick={() => { this.imageFile = null; this.fileInput.value = ''; }}>Убрать выбранный файл</button>}
                 <button type="submit" className="Button Button--primary" disabled={this.creating}>{this.creating ? 'Создание…' : 'Создать карту'}</button>
               </form>
             )}

@@ -32,6 +32,7 @@ export default class MapPage extends Page {
     this.loading = true;
     this.error = '';
     this.exportMessage = '';
+    this.uploadingBackground = false;
     this.tokenName = '';
     this.tokenImageUrl = '';
     this.tokenOwner = '';
@@ -160,7 +161,7 @@ export default class MapPage extends Page {
   }
 
   hasPendingLocalChanges() {
-    return !!this.dragging || this.moves.hasPending() || this.gridUpdates.hasPending();
+    return this.uploadingBackground || !!this.dragging || this.moves.hasPending() || this.gridUpdates.hasPending();
   }
 
   async refresh(silent = false) {
@@ -238,7 +239,7 @@ export default class MapPage extends Page {
   }
 
   begin(event, token) {
-    if (!this.isMine(token) || this.dragging) return;
+    if (this.uploadingBackground || !this.isMine(token) || this.dragging) return;
     event.preventDefault();
     this.localRevision += 1;
     const rect = event.currentTarget.closest('.ChakMap-canvas').getBoundingClientRect();
@@ -297,7 +298,7 @@ export default class MapPage extends Page {
   }
 
   saveGrid(changes) {
-    if (!this.canManage || !this.map) return;
+    if (this.uploadingBackground || !this.canManage || !this.map) return;
     this.localRevision += 1;
     Object.assign(this.map, changes);
     this.gridUpdates.queue(changes);
@@ -325,6 +326,28 @@ export default class MapPage extends Page {
     } finally {
       this.adding = false;
       m.redraw();
+    }
+  }
+
+  async uploadBackground(event) {
+    const file = event.target.files?.[0]; event.target.value = '';
+    if (!file || this.uploadingBackground || !this.canManage || !this.map) return;
+    if (this.hasPendingLocalChanges()) { this.error = 'Дождитесь сохранения фишек и сетки перед заменой фона.'; return; }
+    if (file.size > 10 * 1024 * 1024) { this.error = 'Изображение: не более 10 МиБ.'; return; }
+    this.uploadingBackground = true; this.localRevision++; this.error = '';
+    try {
+      const body = new FormData(); body.append('image', file);
+      const response = await app.request({ method: 'POST', url: endpoint(`chak-maps/${this.mapId}/background`),
+        body, serialize: value => value, errorHandler: () => {} });
+      if (!this.removed) {
+        this.map.backgroundUrl = normalizeMapResponse(response).backgroundUrl;
+        this.loadBackgroundDimensions(this.map.backgroundUrl); this.lastRemoteSnapshot = null;
+      }
+    } catch (error) {
+      if (!this.removed) this.error = 'Не удалось загрузить фон: ' + displayError(error);
+    } finally {
+      this.uploadingBackground = false;
+      if (!this.removed) m.redraw();
     }
   }
 
@@ -363,12 +386,20 @@ export default class MapPage extends Page {
         {this.error && <p className="ChakMaps-error">{this.error}</p>}
         <div className="ChakMap-layout">
           <div className="ChakMap-stage">
-            <MapBoard map={map} metrics={metrics} gridPatternId={this.gridPatternId}
+            <MapBoard map={map} metrics={metrics} readOnly={this.uploadingBackground} gridPatternId={this.gridPatternId}
               canMoveToken={(token) => this.isMine(token)}
               onTokenPointerDown={(event, token) => this.begin(event, token)} />
             <p className="ChakMaps-muted">Редактор для мастеров: перемещайте фишки и назначайте владельцев. Игроки управляют своими фишками в сообщениях обсуждений.</p>
           </div>
           <div className="ChakMap-sidebar">
+            {this.canManage && <section className="ChakMaps-panel">
+              <label for="chak-map-replace-background">Загрузить новый фон с устройства</label>
+              <input id="chak-map-replace-background" className="FormControl" type="file" accept="image/png,image/jpeg"
+                disabled={this.uploadingBackground} onchange={event => this.uploadBackground(event)} />
+              <p className="ChakMaps-muted">PNG или JPEG, до 10 МиБ. Фишки и настройки сетки сохраняются.</p>
+              {this.uploadingBackground && <p role="status">Загружаем фон…</p>}
+            </section>}
+
             <section className="ChakMaps-panel">
               <h3>Фишки ({map.tokens.length})</h3>
               {!map.tokens.length && <p className="ChakMaps-muted">Фишек пока нет.</p>}

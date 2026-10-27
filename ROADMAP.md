@@ -110,3 +110,8 @@ Owner requested above/below-text placement and spoiler-style collapse. [Design p
 ### Owner-accepted baseline and approved follow-ups — 2026-10-27
 
 e917eaa passed all four owner checks (ordinary forum/picker, conflict/retry, reassignment denial, background/network recovery). Release/merge is still a separate decision. Owner approved the presentation plan and requested generic creation placeholders plus local map background upload (pulled forward from v0.5). Implement these as focused branches; keep schema application subject to fresh backup/explicit approval. No other v0.5 layer/editor features are included.
+
+
+### Local map backgrounds implementation — 2026-10-27
+
+feature/local-map-backgrounds implements private PNG/JPEG upload/create/replace with existing URL fallback, server content/resource validation, scoped image reads and transactional compensation. Reuses Intervention Image with an explicit ^3.11 minimum for strip support; no new package/service. Includes the separately committed generic placeholders 7f3f0cb and presentation a4c3136. Auto tests and CI are recorded separately; owner acceptance of the new cumulative build remains pending. Existing-schema approval concerns only the two presentation columns. [QA](docs/QA-local-map-backgrounds.md).
