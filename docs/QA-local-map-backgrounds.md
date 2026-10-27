@@ -26,12 +26,12 @@ JPEG EXIF удаляется. SVG/GIF/WebP/APNG в этом шаге не под
 ## Хранение и права
 
 Файлы: storage/interactive-maps/backgrounds/{mapId}/{random128bit}.png|jpg,
-вне public. GET /chak-maps/{id}/background/{file} требует текущую карту/URL
+вне public. GET /chak-maps/{id}/background/{opaque32hexkey} требует текущую карту/URL
 и map.manage либо хотя бы одно разрешённое видимое comment-прикрепление карты.
 Применяются зарегистрированные post/discussion visibility scopes. Гость —403,
 недоступный viewer —404, без изображения; success/error private,no-store,
 успешный ответ nosniff и фиксированный image Content-Type. Случайное имя не
-заменяет авторизацию. Открепление последней доступной связи отзывает чтение.
+заменяет авторизацию. URI не имеет расширения, чтобы стандартный сервер не перехватывал его как статический PNG/JPEG до Flarum. Открепление последней доступной связи отзывает чтение.
 
 Map+file создаются атомарно с компенсацией записи файла при отказе DB.
 При замене старый URL сохраняется при ошибке; удаляется только новый файл
@@ -81,3 +81,13 @@ above/below, initial collapse, независимость зрителей и в
 Нужна проверка реальных PHP/прокси-лимитов и постоянного хранения на стенде.
 Код, автоматические результаты, ручная приёмка и решение о релизе — отдельные
 статусы. Новая сборка ещё не принята владельцем/к выпуску.
+
+
+Итоговый код: f950993941c002a4e39f8875878f91af4fc37539; включает extensionless routing, scoped image query fix и отказ без raw buffering при отброшенной PHP multipart форме.
+[Порядок обновления и безопасные команды проверки](UPGRADE-embed-upload.md).
+Новые поля нужны только для отображения, upload не добавляет schema.
+
+
+## Итог автоматической проверки
+
+Точный **f950993941c002a4e39f8875878f91af4fc37539**: 64 JS/build, 31/31 local browser (4.5m) на стандартном PHP HTTP server, все PHP processing/scopes/transaction/migration/performance fixtures — успех. [Runtime CI40588367845](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40588367845) Success11m12s и [Extension CI40588368060](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/40588368060) Success33s, включая npm/Composer audits и Windows. Предыдущий a56 runtime упал на статическом routing .png и не объявляется успешным; исправленный URI не имеет расширения. Ручная приёмка и разрешение на новую schema ещё ожидаются.

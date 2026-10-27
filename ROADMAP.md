@@ -9,16 +9,16 @@ The owner passed the supplied Alpha.7 picker/composer/owner-search, presentation
 
 | Order | Work | Completion evidence |
 | --- | --- | --- |
-| 1 | Owner acceptance of v0.3 Alpha.2 (completed) | Conditional moves implemented on `6499c8d`; 55 JS / 23 browser, PHP and both CI workflows pass; owner confirmed all four supplied checks on cumulative e917eaa, including conflict/retry and background/network recovery |
-| 2 | Finish v0.2/v0.3 release gates and prepare review | Existing owner-tested features retained; background-tab resume, device/theme checks, install/upgrade review and actual third-party privacy integration (if used) remain; release/merge requires owner decision |
-| 3 | Agree remaining v0.3 scope | Alpha.1 sync owner-tested, Alpha.2 conflicts automatically tested; presence remains provisional and is not automatically authorized |
-| 4 | Later agreed milestones | v0.4 measurement/markers; v0.5 image upload/layers; v0.6 fog of war; v0.7 session features; no expansion without scope agreement |
+| 1 | Accept new presentation/background build | Above/below and collapse implemented in a4c3136; local upload/replace and scoped image reads in feature/local-map-backgrounds; f950993: 64 JS/31 browser, PHP/Windows/audits and both CI pass; fresh backup/schema approval and owner acceptance pending |
+| 2 | Finish v0.3 release review | e917eaa owner checks completed (forum, conflicts, ownership, background/network recovery); new-feature manual acceptance, artifact/install and actual privacy integration review remain; owner decides release/merge |
+| 3 | Agree remaining v0.3 scope | Presence remains provisional; synchronization/conflicts are already implemented and owner-tested |
+| 4 | Later milestones | v0.4 measurement/markers; v0.5 editor/layers (local background upload pulled forward); v0.6 fog of war; v0.7 sessions |
 
 **Description maintenance:** for every minor version (0.1, 0.2, 0.3 and onward), refresh the main README description, features, limitations and verification/release statuses before preparing the version review. Owner instruction, 2026-10-27.
 
 Zoom/pan were pulled forward and are implemented in both contexts; do not schedule their initial implementation again. Token circles, user avatars, owner autocomplete and grid styles are implemented and owner-tested, not future features. The 2026-10-27 owner instruction authorizes the first focused v0.3 synchronization step, below; it does not authorize release/merge.
 
-Release preparation checklist: [RELEASE-CHECKLIST](docs/RELEASE-CHECKLIST.md). Owner authorized progress toward the final release and a performance audit on 2026-10-27. `feature/sync-performance` (`acabf2c`) eliminates redundant scoped reads and idle redraws without schema or UX changes. Cumulative `fix/build-dependency-audit` source `e917eaa` includes this optimization and fast-uri 3.1.9: 61 JS / 23 browser, PHP/Windows and npm/Composer audits passed, both CI workflows succeeded. Owner acceptance of the new build is pending; [commands and QA](docs/QA-v0.3-performance.md). New milestones remain separately reviewable; final release/merge approval and owner acceptance still apply.
+Release preparation checklist: [RELEASE-CHECKLIST](docs/RELEASE-CHECKLIST.md). Owner authorized progress toward the final release and a performance audit on 2026-10-27. `feature/sync-performance` (`acabf2c`) eliminates redundant scoped reads and idle redraws without schema or UX changes. Cumulative `fix/build-dependency-audit` source `e917eaa` includes this optimization and fast-uri 3.1.9: 61 JS / 23 browser, PHP/Windows and npm/Composer audits passed, both CI workflows succeeded. Owner accepted e917eaa; [commands and QA](docs/QA-v0.3-performance.md). Acceptance of later presentation/upload features is separate. New milestones remain separately reviewable; final release/merge approval and owner acceptance still apply.
 
 ## Historical stage 1 — Reliability of the first public release
 
@@ -49,7 +49,7 @@ Release preparation checklist: [RELEASE-CHECKLIST](docs/RELEASE-CHECKLIST.md). O
 - **v0.2.0:** **priority feature — embed interactive maps in discussion posts**, staff-only map catalog and configurable manage/embed permissions, server-validated per-post/per-discussion visibility, player move-own-token inside the post. This supersedes the earlier v0.7 embedding schedule.
 - **v0.3.0:** multi-client token sync; collision/conflict handling and presence.
 - **v0.4.0:** measurement tools and map markers; pan/zoom in the editor and posts were pulled forward and are implemented.
-- **v0.5.0:** image upload, map editor, overlays and layers.
+- **v0.5.0:** map editor, overlays and layers; local background upload was pulled forward by the owner.
 - **v0.6.0:** fog of war, hidden tokens, visibility and conditions.
 - **v0.7.0:** more advanced game sessions, scoped GM assignments and other Flarum integrations.
 - **v1.0.0:** mature documentation, compatibility tests, release/upgrade guarantee.

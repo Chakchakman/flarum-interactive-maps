@@ -53,3 +53,6 @@ Browser cases проверяют:
 закрыто, восстановление сети, pending move и обычный редактор/BBCode.
 Реализовано в коде; точные auto results отдельно; ручная приёмка новой функции
 и принятие к выпуску пока отсутствуют.
+
+
+Финальная cumulative проверка: f950993, 64 JS/31 browser, оба CI успешны; ссылки/точные результаты в PROJECT-CONTEXT и QA-local-map-backgrounds. Первый a4 runtime имел lifecycle assumption о placeholder скрытого поста; новый case требует настоящий404/no data/no included/no board и допускает штатное unmount Flarum. Ручная приёмка новой presentation и разрешение на её миграцию ещё ожидаются.
