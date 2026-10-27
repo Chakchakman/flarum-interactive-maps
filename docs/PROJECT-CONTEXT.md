@@ -345,3 +345,6 @@ README, ROADMAP, PRODUCT-VISION и QA-v0.3-alpha1-post-sync актуализир
 
 
 Первый CI a51caf3: Extension CI 40529396683 — Success (28s); runtime 40529396680 — Failure на Exercise forum UI (6m57s), несмотря на локальный зелёный общий прогон. Полный лог/артефакт требуют входа, GitHub API возвращает Forbidden. Не объявлять CI успешным и не ослаблять тесты. Добавлен test-only reporter в GITHUB_STEP_SUMMARY: выводит названия/сообщения упавших сценариев из синтетической среды, без env/config dumps и с исключением строк auth/cookie/csrf/password/secret. Следующий прогон нужен для доступной диагностики конкретного сбоя; приложение и assertions этим изменением не меняются. Draft PR через gh создать не удалось (GraphQL Forbidden); ветка опубликована отдельно.
+
+
+edd0a12: Extension CI 40530977109 — Success (33s); runtime 40530977120 — Failure (9m16s). Публичный GitHub не отдал содержимое GITHUB_STEP_SUMMARY, а обнаруженный summary_partial вернул 404 без входа. Следующий diagnostic-only commit публикует очищенные test errors также в workflow error annotations, которые публичная страница действительно показывает. Это не изменение assertions/приложения; требуются конкретная причина и последующий зелёный полный CI. Никакого запроса владельцу на PAT/секреты или платный runner нет.
