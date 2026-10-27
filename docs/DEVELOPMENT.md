@@ -2,7 +2,7 @@
 
 ## Current baseline
 
-Current verified cumulative code: `28bff5e` on `feature/grid-style`, with the owner confirmations recorded in [PROJECT-CONTEXT](PROJECT-CONTEXT.md). Later commits may update documentation only. `main` remains the reviewed-release branch; do not treat older beta/alpha branch labels or manifest versions as the current verified build. Preserve the Alpha.6 recovery branch `backup/alpha6-working-20261024` / `5c846e2`.
+Owner-tested cumulative code: `851f38b` on `feature/post-map-sync` (v0.3 Alpha.1). Alpha.2 source `6499c8d` on `feature/token-move-conflicts` passed automated PHP/JS/browser/Windows checks and both CI workflows; its owner acceptance is pending. Current optimization work is on `feature/sync-performance`. Exact confirmations and results are recorded in [PROJECT-CONTEXT](PROJECT-CONTEXT.md). `main` remains the reviewed-release branch; do not treat older beta/alpha branch labels or manifest versions as the current verified build. Preserve the Alpha.6 recovery branch `backup/alpha6-working-20261024` / `5c846e2`.
 
 Post-menu attachment and optional composer selection are supported; marker text remains inert. Focused stacked branches keep independent changes reviewable. If GitHub API refuses PR creation, publish the branch and compare link and record the restriction; do not claim a PR exists or create a duplicate of an existing PR.
 
@@ -27,7 +27,7 @@ Standalone PHP checks cover access helpers, transactions, grid validation and sy
 
 The downloadable archive is a test build, not a release. It does not update tracked `js/dist`, create tags, publish to Packagist or install anything on a forum. Before a Composer release, rebuild and commit the dist files into the release commit so the tagged source archive contains them.
 
-The disposable Flarum integration environment and browser suite are implemented. Next: remaining v0.2 release gates (GM grants, visibility integrations, multiple embeds, layouts and reproducible installation), then plan v0.3 synchronization/conflicts.
+The disposable Flarum integration environment and browser suite are implemented. Synchronization and conditional writes have automated coverage. Next: owner conflict/upgrade acceptance, performance regression verification and the remaining release gates in [RELEASE-CHECKLIST](RELEASE-CHECKLIST.md).
 
 ## One-command check in the existing Windows lab
 

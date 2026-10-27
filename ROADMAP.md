@@ -18,6 +18,8 @@ The owner passed the supplied Alpha.7 picker/composer/owner-search, presentation
 
 Zoom/pan were pulled forward and are implemented in both contexts; do not schedule their initial implementation again. Token circles, user avatars, owner autocomplete and grid styles are implemented and owner-tested, not future features. The 2026-10-27 owner instruction authorizes the first focused v0.3 synchronization step, below; it does not authorize release/merge.
 
+Release preparation checklist: [RELEASE-CHECKLIST](docs/RELEASE-CHECKLIST.md). Owner authorized progress toward the final release and a performance audit on 2026-10-27. Focused current work: `feature/sync-performance`, eliminating redundant scoped reads and idle redraws without schema or UX changes. New milestones remain separately reviewable; final release/merge approval and owner acceptance still apply.
+
 ## Historical stage 1 — Reliability of the first public release
 
 | Version | Scope | Release gate |

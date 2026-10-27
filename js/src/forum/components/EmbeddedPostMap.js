@@ -1,3 +1,4 @@
+import { reconcileTokens } from '../reconcileTokens.mjs';
 import { terminalMoveError } from '../tokenMoveConflict.mjs';
 import Component from 'flarum/common/Component';
 import { endpoint, displayError } from '../api';
@@ -108,8 +109,10 @@ export default class EmbeddedPostMap extends Component {
 
   applySnapshot(snapshot) {
     if (this.removed) return;
+    let changed = this.syncError !== '';
     this.syncError = '';
     if (!snapshot.available) {
+      changed = changed || this.map !== null || !this.unavailable;
       this.map = null;
       this.unavailable = true;
     } else if (!this.map || String(this.map.id) !== String(snapshot.mapId)) {
@@ -118,12 +121,14 @@ export default class EmbeddedPostMap extends Component {
       this.requestRedraw();
       return;
     } else {
-      if (!Array.isArray(snapshot.tokens)) throw new Error('Missing snapshot tokens');
-      this.map.tokens = snapshot.tokens.map(normalizeToken);
-      this.serverCanManage = snapshot.canManageMaps === true;
+      const tokens = reconcileTokens(this.map.tokens, snapshot.tokens);
+      const canManage = snapshot.canManageMaps === true;
+      changed = changed || tokens !== this.map.tokens || this.serverCanManage !== canManage || this.unavailable;
+      this.map.tokens = tokens;
+      this.serverCanManage = canManage;
       this.unavailable = false;
     }
-    this.requestRedraw();
+    if (changed) this.requestRedraw();
   }
 
   async load(silent = false) {
