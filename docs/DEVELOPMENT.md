@@ -2,7 +2,7 @@
 
 ## Current baseline
 
-Owner-tested cumulative code: `851f38b` on `feature/post-map-sync` (v0.3 Alpha.1). Alpha.2 source `6499c8d` on `feature/token-move-conflicts` passed automated PHP/JS/browser/Windows checks and both CI workflows; its owner acceptance is pending. Current optimization work is on `feature/sync-performance`. Exact confirmations and results are recorded in [PROJECT-CONTEXT](PROJECT-CONTEXT.md). `main` remains the reviewed-release branch; do not treat older beta/alpha branch labels or manifest versions as the current verified build. Preserve the Alpha.6 recovery branch `backup/alpha6-working-20261024` / `5c846e2`.
+Owner-tested cumulative code: `851f38b` on `feature/post-map-sync` (v0.3 Alpha.1). Alpha.2 source `6499c8d` on `feature/token-move-conflicts` passed automated PHP/JS/browser/Windows checks and both CI workflows; its owner acceptance is pending. Optimized cumulative source `e917eaa` on `fix/build-dependency-audit` passed 61 JS / 23 browser, PHP/Windows and npm/Composer audits in successful CI; owner acceptance is pending. Performance source is separately reviewable on `feature/sync-performance`. Exact confirmations and results are recorded in [PROJECT-CONTEXT](PROJECT-CONTEXT.md). `main` remains the reviewed-release branch; do not treat older beta/alpha branch labels or manifest versions as the current verified build. Preserve the Alpha.6 recovery branch `backup/alpha6-working-20261024` / `5c846e2`.
 
 Post-menu attachment and optional composer selection are supported; marker text remains inert. Focused stacked branches keep independent changes reviewable. If GitHub API refuses PR creation, publish the branch and compare link and record the restriction; do not claim a PR exists or create a duplicate of an existing PR.
 
