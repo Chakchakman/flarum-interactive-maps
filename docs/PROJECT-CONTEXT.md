@@ -348,3 +348,10 @@ README, ROADMAP, PRODUCT-VISION и QA-v0.3-alpha1-post-sync актуализир
 
 
 edd0a12: Extension CI 40530977109 — Success (33s); runtime 40530977120 — Failure (9m16s). Публичный GitHub не отдал содержимое GITHUB_STEP_SUMMARY, а обнаруженный summary_partial вернул 404 без входа. Следующий diagnostic-only commit публикует очищенные test errors также в workflow error annotations, которые публичная страница действительно показывает. Это не изменение assertions/приложения; требуются конкретная причина и последующий зелёный полный CI. Никакого запроса владельцу на PAT/секреты или платный runner нет.
+
+
+### Причина CI установлена и воспроизведена на MariaDB 11.8
+
+Публичные annotations в 901d178 / runtime 40533054125 показали две конкретные ошибки: race ownership case получил 500 с PDO 1020 `Record has changed since last read in table chak_tokens; try restarting transaction`, competing routes — [200,500] вместо [200,409]. Это настоящая совместимость новой реализации с MariaDB 11.8, не ошибка селектора и не основание ослаблять assertions. Локальная прежняя БД была 11.4, поэтому создан отдельный пустой maps-conflicts-maria118 / flarum_smoke и новый форум /workspace/conflicts-ci-lab/forum с синтетическими аккаунтами; прежняя БД не заменена и не удалена. Первый запуск нового локального skeleton потребовал отсутствовавшую папку storage/formatter; это исправление подготовки среды, не код расширения. После нормальной загрузки 11.8 воспроизвела те же две 500.
+
+Framework ConcurrencyErrorDetector уже распознаёт 1020, но transaction по умолчанию делал одну попытку. Оба move controllers теперь используют до трёх полных transaction attempts: новый scoped post/token read, актуальная owner-проверка, version comparison и save, без отдельного повтора UPDATE. Legacy staff query создаётся заново внутри closure каждой попытки. Целевые оба case на 11.8 прошли (15.2s), PHP metadata/syntax/access/grid/transaction/migration/runtime privacy — успех. Общий 23-case прогон на 11.8 выполняется; новый полный CI проверяет исправление. Никакой подмены результата первоначальных красных запусков на зелёный без нового прогона не производится.

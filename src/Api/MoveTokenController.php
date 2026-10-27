@@ -20,11 +20,11 @@ class MoveTokenController extends ApiController implements RequestHandlerInterfa
         }
         // Check permissions before looking up token IDs so ordinary users
         // cannot enumerate which token identifiers exist.
-        $query = Token::query();
-        return $query->getQuery()->getConnection()->transaction(function () use ($query, $request) {
-            $token = $query->lockForUpdate()->find($this->id($request));
+        // Retry serialization/deadlock errors with a fresh locked read.
+        return Token::query()->getQuery()->getConnection()->transaction(function () use ($request) {
+            $token = Token::query()->lockForUpdate()->find($this->id($request));
             if (!$token) return $this->error('Фишка не найдена', 404);
             return $this->applyTokenMove($token, $this->data($request));
-        });
+        }, 3);
     }
 }

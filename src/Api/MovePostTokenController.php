@@ -29,6 +29,8 @@ class MovePostTokenController extends ApiController implements RequestHandlerInt
             return $this->error('Карта или фишка не найдена', 404);
         }
 
+        // MariaDB 11.8 can return 1020 after a lock wait; restart the whole
+        // transaction (including visibility/owner checks), never just the UPDATE.
         return Token::query()->getQuery()->getConnection()->transaction(function () use ($actor, $request, $postId, $tokenId) {
             // Lock the parent, then token, then association. Token-before-embed
             // agrees with map deletion; recheck the link after any token wait.
@@ -48,6 +50,6 @@ class MovePostTokenController extends ApiController implements RequestHandlerInt
                 return $this->error('Нельзя перемещать чужую фишку', 403);
             }
             return $this->applyTokenMove($token, $this->data($request));
-        });
+        }, 3);
     }
 }
