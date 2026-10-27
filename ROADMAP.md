@@ -14,7 +14,7 @@ The owner passed the supplied Alpha.7 picker/composer/owner-search, presentation
 | 3 | Plan v0.3 client synchronization | Audit existing refresh behavior; specify and test two-client convergence, stale updates and competing moves; presence remains provisional |
 | 4 | Later agreed milestones | Measurement/markers, image upload/layers, fog of war and session features; no expansion without scope agreement |
 
-Zoom/pan were pulled forward and are implemented in both contexts; do not schedule their initial implementation again. Token circles, user avatars, owner autocomplete and grid styles are implemented and owner-tested, not future features. No new large feature is started by recording acceptance.
+Zoom/pan were pulled forward and are implemented in both contexts; do not schedule their initial implementation again. Token circles, user avatars, owner autocomplete and grid styles are implemented and owner-tested, not future features. The 2026-10-27 owner instruction authorizes the first focused v0.3 synchronization step, below; it does not authorize release/merge.
 
 ## Historical stage 1 — Reliability of the first public release
 
@@ -86,3 +86,8 @@ Before further v0.3 work: add selection of a map in the new-discussion/reply com
 ### Requested presentation work (2026-10-25)
 
 Focused follow-ups: circular token image fit; native user avatars in owner suggestions (confirmed meaning); per-map grid color/thickness. Preserve coordinates/permissions and verified composer/picker behavior. The style persistence migration must be reviewed and explicitly approved with a fresh DB backup before any existing forum upgrade. These requests do not authorize a release or automatic PR merges.
+
+
+### v0.3 Alpha.1 in development — 2026-10-27
+
+`feature/post-map-sync`: visible embedded boards share bounded token polling; actor-specific post privacy remains authoritative, local active writes and stale GETs are protected, network errors back off. No migrations/external realtime service. Scheduler and targeted two-client browser tests passed; full CI and owner lab acceptance are tracked in PROJECT-CONTEXT and QA-v0.3-alpha1-post-sync. The next focused v0.3 work is competing-write conflict handling; presence remains provisional. Current last-committed-write semantics are not described as conflict protection.

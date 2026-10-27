@@ -15,6 +15,7 @@ $site = require $root.'/site.php';
 $container = $site->bootApp()->getContainer();
 
 use ChakChakman\InteractiveMaps\Api\ShowPostMapController;
+use ChakChakman\InteractiveMaps\Api\SyncPostMapsController;
 use ChakChakman\InteractiveMaps\Api\MovePostTokenController;
 use ChakChakman\InteractiveMaps\Api\AttachMapToPostController;
 use ChakChakman\InteractiveMaps\Access\MapPermissions;
@@ -67,6 +68,20 @@ try {
     $show = fn () => (new ShowPostMapController)->handle(RequestUtil::withActor(
         (new ServerRequest)->withQueryParams(['id' => $postId]), $actor
     ));
+    $sync = fn () => (new SyncPostMapsController)->handle(RequestUtil::withActor(
+        (new ServerRequest)->withQueryParams(['postIds' => $postId.',2147483647']), $actor
+    ));
+    $checkSync = function (bool $available) use ($sync, $postId, $mapId) {
+        $response = $sync();
+        if ($response->getStatusCode() !== 200 || $response->getHeaderLine('Cache-Control') !== 'private, no-store') throw new LogicException('Invalid sync response');
+        $data = json_decode((string) $response->getBody(), true)['data'];
+        if ($data[0]['id'] !== (string) $postId || $data[0]['attributes']['available'] !== $available
+            || $data[1]['attributes'] !== ['available' => false]) throw new LogicException('Wrong post scope in batch');
+        if ($available) {
+            if ($data[0]['attributes']['mapId'] !== $mapId || count($data[0]['attributes']['tokens']) !== 1) throw new LogicException('Missing authorized tokens');
+        } elseif ($data[0]['attributes'] !== ['available' => false]) throw new LogicException('Private batch leaked attributes');
+    };
+    $checkSync(true);
     $move = fn () => (new MovePostTokenController)->handle(RequestUtil::withActor(
         (new ServerRequest)->withQueryParams(['postId' => $postId, 'tokenId' => $tokenId])
             ->withParsedBody(['x' => 0.9, 'y' => 0.1, 'postId' => $postId, 'mapId' => $mapId]), $actor
@@ -90,12 +105,14 @@ try {
         $id = $table === 'posts' ? $postId : $discussionId;
         $db->table($table)->where('id', $id)->update([$column => $value]);
         $check($show(), 404, "$table.$column read");
+        $checkSync(false);
         $check($move(), 404, "$table.$column movement");
         $check($attach(), 403, "$table.$column attachment");
         $saved = $db->table('chak_tokens')->find($tokenId);
         if ((float) $saved->x !== 0.25 || (float) $saved->y !== 0.75) throw new LogicException('Denied movement changed coordinates');
         $db->table($table)->where('id', $id)->update([$column => $column === 'hidden_at' ? null : false]);
         $check($show(), 200, "$table.$column restoration");
+        $checkSync(true);
         echo "PASS: real Flarum $table.$column scope denies manager/owner read, move and attach; restoration works\n";
     }
 
@@ -111,10 +128,12 @@ try {
         $check($show(), 200, $table.' custom scope positive control');
         $scopeState->blocked = true;
         $check($show(), 404, $table.' custom scope read');
+        $checkSync(false);
         $check($move(), 404, $table.' custom scope movement');
         $check($attach(), 403, $table.' custom scope attachment');
         $scopeState->blocked = false;
         $check($show(), 200, $table.' custom scope restoration');
+        $checkSync(true);
         echo "PASS: real Flarum $table extension visibility scoper retained\n";
     }
 } finally {

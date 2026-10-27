@@ -77,3 +77,8 @@ Token images fill a centered circular viewport without stretching. Owned/unowned
 ## Per-map grid presentation (requested 2026-10-25)
 
 Map managers can choose a #RRGGBB grid color and thickness from 0.5 to 5 px in half-pixel steps. The same style appears in the editor and every authorized post embedding that map. Preserve white/48%-opacity/1px legacy defaults and all geometry/ownership rules. Persisting these settings requires the additive schema change documented in QA-grid-style.md; applying it to an existing forum remains subject to backup and explicit owner approval.
+
+
+## v0.3 first step — visible token snapshots (owner-authorized 2026-10-27)
+
+Embedded boards share an authenticated read-only batch endpoint scoped by post visibility, with at most 20 post IDs per request. Poll only visible/near-visible boards in visible tabs, about every five seconds, with bounded error backoff and no overlapping cycles. Update token positions/ownership without resetting viewport state or replacing active local moves; reject a read whose local activity epoch changed while it was in flight. Unavailable posts reveal no map/token data. The first step retains existing write semantics; distributed conflict rejection and presence are subsequent work, not a guarantee already provided. No schema change or paid realtime service is introduced. Background/grid/title changes retain the explicit refresh action in this step.

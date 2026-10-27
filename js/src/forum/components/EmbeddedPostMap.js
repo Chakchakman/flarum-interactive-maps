@@ -4,6 +4,7 @@ import { normalizeMapResponse, normalizeToken, resourceBody } from '../apiRespon
 import { LatestTokenMoveQueue } from '../tokenMoveQueue.mjs';
 import { FALLBACK_IMAGE, gridMetrics, snapToCellCenter, validImageSize } from '../gridGeometry.mjs';
 import MapBoard from './MapBoard';
+import { postMapSync } from '../sharedPostMapSync';
 import { canDragPostToken } from '../inlineTokenPermission.mjs';
 
 // Interactive post map: all movement writes go through a post-scoped,
@@ -22,6 +23,9 @@ export default class EmbeddedPostMap extends Component {
     this.imageStatus = 'loading';
     this.dragging = null;
     this.moveError = '';
+    this.syncError = '';
+    this.syncEpoch = 0;
+    this.serverCanManage = null;
     this.moves = new LatestTokenMoveQueue(
       async (id, coords) => {
         const response = await app.request({
@@ -53,17 +57,29 @@ export default class EmbeddedPostMap extends Component {
 
   oncreate(vnode) {
     super.oncreate(vnode);
+    this.syncRegistration = postMapSync().register(this.postId, {
+      isBusy: () => this.loading || !!this.dragging || this.moves.hasPending(),
+      epoch: () => this.syncEpoch,
+      apply: snapshot => this.applySnapshot(snapshot),
+      onError: error => {
+        if (error.status === 403 || error.status === 404) this.applySnapshot({ available: false });
+        else {
+          this.syncError = 'Не удалось обновить позиции. Повторяем автоматически…';
+          this.requestRedraw();
+        }
+      },
+    });
     // Do not fetch remote images or full map/token payloads until a post is
     // near the viewport. Many posts in a thread need no map requests.
     if ('IntersectionObserver' in window) {
       this.observer = new IntersectionObserver((entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          this.observer.disconnect();
-          this.load();
-        }
+        const visible = entries.some(entry => entry.isIntersecting);
+        this.syncRegistration.setActive(visible);
+        if (visible && !this.requested) void this.load();
       }, { rootMargin: '250px 0px' });
       this.observer.observe(vnode.dom);
     } else {
+      this.syncRegistration.setActive(true);
       this.load();
     }
   }
@@ -72,6 +88,7 @@ export default class EmbeddedPostMap extends Component {
     super.onremove(vnode);
     this.removed = true;
     this.observer?.disconnect();
+    this.syncRegistration?.remove();
     this.detachDragListeners();
   }
 
@@ -81,9 +98,30 @@ export default class EmbeddedPostMap extends Component {
     m.redraw();
   }
 
+  applySnapshot(snapshot) {
+    if (this.removed) return;
+    this.syncError = '';
+    if (!snapshot.available) {
+      this.map = null;
+      this.unavailable = true;
+    } else if (!this.map || String(this.map.id) !== String(snapshot.mapId)) {
+      this.map = null;
+      void this.load();
+      this.requestRedraw();
+      return;
+    } else {
+      if (!Array.isArray(snapshot.tokens)) throw new Error('Missing snapshot tokens');
+      this.map.tokens = snapshot.tokens.map(normalizeToken);
+      this.serverCanManage = snapshot.canManageMaps === true;
+      this.unavailable = false;
+    }
+    this.requestRedraw();
+  }
+
   async load() {
     // An in-flight refresh must not overwrite a local drag or queued write.
     if (this.loading || this.removed || this.dragging || this.moves.hasPending()) return;
+    const epoch = ++this.syncEpoch;
     this.requested = true;
     this.loading = true;
     this.unavailable = false;
@@ -94,13 +132,13 @@ export default class EmbeddedPostMap extends Component {
       });
       const result = normalizeMapResponse(response);
       if (!Array.isArray(result.tokens)) throw new Error('Map tokens were missing');
-      if (this.removed || this.dragging || this.moves.hasPending()) return;
+      if (this.removed || this.syncEpoch !== epoch || this.dragging || this.moves.hasPending()) return;
       this.map = result;
       this.loadImage(result.backgroundUrl);
     } catch (_error) {
       // Keep forbidden, hidden, deleted or unreachable maps out of the post.
       // Never echo API details or identifiers to the viewer.
-      if (!this.removed) {
+      if (!this.removed && this.syncEpoch === epoch) {
         this.map = null;
         this.unavailable = true;
       }
@@ -137,7 +175,7 @@ export default class EmbeddedPostMap extends Component {
   canMoveToken(token) {
     return canDragPostToken({
       actorId: app.session.user?.id(),
-      canManageMaps: app.forum.attribute('canManageChakMaps') === true,
+      canManageMaps: this.serverCanManage ?? (app.forum.attribute('canManageChakMaps') === true),
       ownerUserId: token.ownerUserId,
     });
   }
@@ -154,6 +192,7 @@ export default class EmbeddedPostMap extends Component {
 
   beginDrag(event, token) {
     if (this.dragging || !this.canMoveToken(token) || !this.map) return;
+    this.syncEpoch += 1;
     event.preventDefault();
     event.stopPropagation();
     const rect = event.currentTarget.closest('.ChakMap-canvas')?.getBoundingClientRect();
@@ -238,6 +277,7 @@ export default class EmbeddedPostMap extends Component {
               invalidateParent={() => this.attrs.invalidateParent?.()}
               canMoveToken={(token) => this.canMoveToken(token)}
               onTokenPointerDown={(event, token) => this.beginDrag(event, token)} />
+            {this.syncError && <p className="ChakMaps-muted" role="status">{this.syncError}</p>}
             {this.moveError && <p className="ChakMaps-error">{this.moveError}</p>}
             <p className="ChakMaps-muted">Перетаскивайте свою фишку. Для остальных фишек доступен только просмотр.</p>
           </>

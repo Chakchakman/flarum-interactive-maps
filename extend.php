@@ -104,6 +104,7 @@ return [
         ->route('/maps/{id}', 'chak.map'),
 
     (new Extend\Routes('api'))
+        ->get('/chak-map-sync', 'chak.maps.sync', \ChakChakman\InteractiveMaps\Api\SyncPostMapsController::class)
         ->get('/chak-map-users', 'chak.maps.users.search', SearchMapUsersController::class)
         ->get('/chak-maps', 'chak.maps.index', ListMapsController::class)
         ->post('/chak-maps', 'chak.maps.create', CreateMapController::class)
