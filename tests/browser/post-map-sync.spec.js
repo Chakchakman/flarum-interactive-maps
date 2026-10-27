@@ -53,8 +53,17 @@ test('a second client receives movement and ownership automatically; hidden map 
     await expect(token).toHaveCount(0);
     const denied = await api(player, 'GET', 'chak-map-sync?postIds=' + target.id);
     expect(denied.data[0].attributes).toEqual({ available: false });
+    let failRestoredLoad = true;
+    await player.route('**/api/chak-map-embeds/' + target.id, async route => {
+      if (failRestoredLoad) {
+        failRestoredLoad = false;
+        await route.fulfill({ status: 503, contentType: 'application/json', body: '{"errors":[{"status":"503"}]}' });
+      } else await route.continue();
+    });
     await api(page, 'PATCH', 'posts/' + target.id, { isHidden: false }, 200, 'posts');
-    await expect(token).toBeVisible({ timeout: 15000 });
+    await expect(token).toBeVisible({ timeout: 20000 });
+    expect(failRestoredLoad).toBe(false);
+    await expect(player.getByRole('alert')).toHaveCount(0);
     expect(errors).toEqual([]);
   } finally { await context.close(); }
 });
@@ -105,11 +114,17 @@ test('a late snapshot never rolls back a completed local drag; transient failure
   let release, captured;
   const held = new Promise(resolve => { captured = resolve; });
   const gate = new Promise(resolve => { release = resolve; });
-  let holdNext = true, failNext = false;
+  let holdNext = true, failNext = false, stallNext = false;
   await page.route('**/api/chak-map-sync?*', async route => {
     if (holdNext) {
       holdNext = false; const response = await route.fetch(); const body = await response.json();
       captured(); await gate; await route.fulfill({ response, json: body });
+    } else if (stallNext) {
+      stallNext = false;
+      const response = await route.fetch();
+      await new Promise(resolve => setTimeout(resolve, 17000));
+      // The client's real 15s XHR timeout has already aborted this response.
+      await route.fulfill({ response }).catch(() => {});
     } else if (failNext) {
       failNext = false; await route.fulfill({ status: 503, contentType: 'application/json', body: '{"errors":[{"status":"503"}]}' });
     } else await route.continue();
@@ -132,5 +147,12 @@ test('a late snapshot never rolls back a completed local drag; transient failure
   await expect(page.getByRole('alert')).toHaveCount(0);
   await move(page, target, 0.8, 0.2);
   await expect.poll(async () => (await position(token)).x, { timeout: 20000 }).toBeCloseTo(0.8, 4);
+  await expect(board.getByRole('status')).toHaveCount(0);
+  stallNext = true;
+  await expect(board.getByRole('status')).toContainText('Повторяем автоматически', { timeout: 25000 });
+  await expect(token).toBeVisible();
+  expect((await position(token)).x).toBeCloseTo(0.8, 4);
+  await move(page, target, 0.6, 0.7);
+  await expect.poll(async () => (await position(token)).x, { timeout: 20000 }).toBeCloseTo(0.6, 4);
   await expect(board.getByRole('status')).toHaveCount(0);
 });

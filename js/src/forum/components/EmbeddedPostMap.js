@@ -106,7 +106,7 @@ export default class EmbeddedPostMap extends Component {
       this.unavailable = true;
     } else if (!this.map || String(this.map.id) !== String(snapshot.mapId)) {
       this.map = null;
-      void this.load();
+      void this.load(true);
       this.requestRedraw();
       return;
     } else {
@@ -118,7 +118,7 @@ export default class EmbeddedPostMap extends Component {
     this.requestRedraw();
   }
 
-  async load() {
+  async load(silent = false) {
     // An in-flight refresh must not overwrite a local drag or queued write.
     if (this.loading || this.removed || this.dragging || this.moves.hasPending()) return;
     const epoch = ++this.syncEpoch;
@@ -129,6 +129,7 @@ export default class EmbeddedPostMap extends Component {
       const response = await app.request({
         method: 'GET',
         url: endpoint(`chak-map-embeds/${this.postId}`),
+        ...(silent ? { background: true, errorHandler: () => {} } : {}),
       });
       const result = normalizeMapResponse(response);
       if (!Array.isArray(result.tokens)) throw new Error('Map tokens were missing');

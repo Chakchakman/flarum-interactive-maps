@@ -6,7 +6,7 @@ export function postMapSync() {
   if (!shared) {
     shared = new VisiblePostMapSync(ids => app.request({
       method: 'GET', url: endpoint('chak-map-sync'), params: { postIds: ids.join(',') },
-      background: true, errorHandler: () => {},
+      background: true, timeout: 15000, errorHandler: () => {},
     }));
     document.addEventListener('visibilitychange', () => shared.wake());
   }
