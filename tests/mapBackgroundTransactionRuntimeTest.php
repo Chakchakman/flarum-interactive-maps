@@ -54,6 +54,14 @@ try {
         }
     );
     $count = $db->table('chak_maps')->count();
+    $rawBody = new class('php://temp', 'w+') extends \Laminas\Diactoros\Stream {
+        public function __toString(): string { throw new LogicException('Raw rejected multipart body must not be read'); }
+    };
+    $discarded = $request([])->withUploadedFiles([])->withParsedBody(null)
+        ->withHeader('Content-Type', 'multipart/form-data; boundary=discarded')->withBody($rawBody);
+    $rejected = (new \ChakChakman\InteractiveMaps\Api\CreateMapController($backgrounds))->handle($discarded);
+    if ($rejected->getStatusCode() !== 413) throw new LogicException('Discarded PHP multipart body was not rejected');
+
     $expectFailure = function ($action) {
         try { $action(); throw new LogicException('Expected persistence failure'); }
         catch (LogicException $error) { if ($error->getMessage() !== 'Synthetic upload persistence failure') throw $error; }

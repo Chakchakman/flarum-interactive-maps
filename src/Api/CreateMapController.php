@@ -17,8 +17,11 @@ class CreateMapController extends ApiController implements RequestHandlerInterfa
     public function handle(Request $request): Response
     {
         if (!$this->manage($request)) return $this->error('Создавать карты могут только назначенные мастера', 403);
-        $data = $this->data($request);
-        if (!$data && !$request->getUploadedFiles() && str_starts_with($request->getHeaderLine('Content-Type'), 'multipart/form-data')) {
+        $multipart = str_starts_with(strtolower($request->getHeaderLine('Content-Type')), 'multipart/form-data');
+        // PHP can discard an oversized form before PSR upload parsing. Never
+        // fall back to buffering that raw multipart body as JSON.
+        $data = $multipart ? (is_array($request->getParsedBody()) ? $request->getParsedBody() : []) : $this->data($request);
+        if (!$data && !$request->getUploadedFiles() && $multipart) {
             return $this->error('PHP не получил файл. Проверьте лимиты upload_max_filesize и post_max_size.', 413);
         }
         if (!is_string($data['title'] ?? null)) return $this->error('Укажите название карты строкой.');
