@@ -95,5 +95,11 @@ jobs:
       - name: Check orchestration and stop-on-error behavior
         shell: powershell
         run: |
-          ./tests/labScriptTest.ps1
-          ./tests/labBackupScriptTest.ps1
+          try {
+            ./tests/labScriptTest.ps1
+            ./tests/labBackupScriptTest.ps1
+          } catch {
+            # Fixtures contain only synthetic metadata; expose the actual failure.
+            Write-Output "::error::$($_.Exception.Message)"
+            exit 1
+          }
