@@ -138,14 +138,26 @@ Windows с реальным Docker владельца — следующий ф�
     if ((Get-FileHash -LiteralPath $mapsBackupScript -Algorithm SHA256).Hash -ne $mapsExpectedHash) {
         throw 'Backup helper checksum mismatch. Stop here.'
     }
-    & $mapsBackupScript -LabPath (Get-Location).Path
+    Unblock-File -LiteralPath $mapsBackupScript
+    powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File $mapsBackupScript -LabPath (Get-Location).Path
+    if ($LASTEXITCODE -ne 0) { throw 'Backup incomplete. Stop here.' }
 }
 ```
 
 После запуска прислать только путь/Name/Length. При ошибке остановиться,
-не продолжать установку и не удалять частичную копию. Если Windows блокирует
-исполнение скрипта политикой, прислать текст ошибки; не менять системную policy
-вслепую. Миграция/checkout в helper отсутствуют; применение schema согласуется отдельно.
+не продолжать установку и не удалять частичную копию. Запуск использует RemoteSigned только для дочернего PowerShell-процесса;
+постоянная системная политика не меняется. Unblock-File вызывается только
+после точной проверки SHA256. Если организация запрещает запуск group policy,
+остановиться и прислать ошибку, не обходить её другими настройками. Миграция/checkout в helper отсутствуют; применение schema согласуется отдельно.
+
+Подтверждено владельцем 2026-11-06: backup завершён в
+`_backups/maps-backup-20261106-231128-4247d5f2`; extension.tgz1137371 bytes,
+database.sql66087 bytes, storage.tgz200643 bytes. Это SQL выбранной установленной
+БД, не обязательно архив всех баз MariaDB; размер сам по себе не доказывает
+или опровергает полноту. Проверены completion footer, tar readability, размеры
+и manifest; пробное восстановление не выполнялось. Windows/Docker запуск
+helper фактически подтверждён. До установки не возобновлять записи стенда;
+при новых данных потребуется новая согласованная копия.
 
 ## Подготовленный порядок установки после разрешения
 
