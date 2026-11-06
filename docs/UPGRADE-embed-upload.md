@@ -9,7 +9,9 @@ f950993. Оба CI успешны: [Extension40604488681](https://github.com/Cha
 
 Предварительная проверка владельца от 2026-10-28: Intervention Image 3.11.10,
 PHP CLI 64M/64M/512M. Обновлять Intervention для этого стенда не требуется.
-Разрешение на presentation schema ещё ожидается. Token/clipboard не добавляют
+Повторный preflight владельца 2026-11-06 подтвердил те же версии/лимиты, e917eaa
+и только generated JS edits; app/db работают, БД healthy. Повторять этот preflight
+сейчас не требуется. Разрешение на presentation schema ещё ожидается. Token/clipboard не добавляют
 собственной миграции. [Дополнительная QA](QA-token-images-clipboard.md).
 
 ## Безопасная предварительная проверка
@@ -117,9 +119,33 @@ DB-контейнера из MARIADB_ROOT_PASSWORD или MYSQL_ROOT_PASSWORD; �
 и dump footer не является пробным восстановлением. Папка `_backups` приватная,
 не отправлять SQL/tar/checksums с данными в публичные обсуждения.
 
-Перед выдачей точной download-команды дождаться Windows CI helper и использовать
-его неизменяемый SHA. После запуска прислать только путь/Name/Length.
-Миграция/checkout в helper отсутствуют; применение schema согласуется отдельно.
+Helper проверен на **7f4c8c0366745f0754d18de6185f1a2e0f87da80**:
+[Extension CI42285448808](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/42285448808)
+успешен (32s), включая Windows PowerShell5.1 orchestration и7 failure paths.
+Это версия вспомогательного скрипта; целевой код расширения остаётся494b41d.
+SQL/storage commands дополнительно проверены на синтетическом облачном форуме;
+Windows с реальным Docker владельца — следующий фактический запуск.
+
+Из папки лаборатории с docker-compose.yml:
+
+```powershell
+& {
+    $ErrorActionPreference = 'Stop'
+    New-Item -ItemType Directory -Path .\_tools -Force | Out-Null
+    $mapsBackupScript = Join-Path (Get-Location).Path '_tools\Backup-Lab-7f4c8c0.ps1'
+    Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/Chakchakman/flarum-interactive-maps/7f4c8c0366745f0754d18de6185f1a2e0f87da80/scripts/Backup-Lab.ps1' -OutFile $mapsBackupScript
+    $mapsExpectedHash = '0e1a0b4bc9d1b7a8ff4451a8a35eb213452c67d7f0a21dff6657a29671178b91'
+    if ((Get-FileHash -LiteralPath $mapsBackupScript -Algorithm SHA256).Hash -ne $mapsExpectedHash) {
+        throw 'Backup helper checksum mismatch. Stop here.'
+    }
+    & $mapsBackupScript -LabPath (Get-Location).Path
+}
+```
+
+После запуска прислать только путь/Name/Length. При ошибке остановиться,
+не продолжать установку и не удалять частичную копию. Если Windows блокирует
+исполнение скрипта политикой, прислать текст ошибки; не менять системную policy
+вслепую. Миграция/checkout в helper отсутствуют; применение schema согласуется отдельно.
 
 ## Подготовленный порядок установки после разрешения
 

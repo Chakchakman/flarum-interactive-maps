@@ -56,6 +56,8 @@ docker compose run --rm node npm run check
 
 **Обновление существующей БД:** сначала свежая резервная копия и review миграций. Не запускайте глобальный `flarum migrate` как обычное средство очистки кэша. Согласованное обновление двух полей сетки и точечный CLI helper описаны в [QA-grid-style](docs/QA-grid-style.md); уже обновлённому стенду повторная миграция не требуется. Сохраняйте резервную Alpha.6 `backup/alpha6-working-20261024` / `5c846e2`.
 
+Перед обновлением существующего Windows-стенда подготовлен [скрипт резервирования и точная команда](docs/UPGRADE-embed-upload.md#резервная-копия-до-установки): текущая extension, SQL и storage/composer, проверка архивов и SHA256. Windows-проверки helper прошли; скрипт не переключает checkout и не применяет миграции.
+
 ## Что дальше
 
 Одобренные новые возможности реализованы в `feature/embed-presentation` и `feature/local-map-backgrounds`; [QA отображения](docs/QA-embed-presentation.md) и [QA загрузки](docs/QA-local-map-backgrounds.md). Дополнение `feature/local-token-images`: [фишки и буфер обмена](docs/QA-token-images-clipboard.md). Общая новая сборка потребует согласованной миграции двух полей прикрепления и отдельной ручной приёмки.
