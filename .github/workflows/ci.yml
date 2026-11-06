@@ -8,6 +8,7 @@ on:
       - main
       - 'fix/**'
       - 'feature/**'
+      - 'chore/lab-backup'
 
 permissions:
   contents: read
