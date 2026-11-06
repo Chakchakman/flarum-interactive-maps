@@ -31,6 +31,60 @@ docker compose exec -T app php --ri core | Select-String -Pattern '^(upload_max_
 любым изменением. PHP CLI-лимиты — предварительная диагностика; окончательный
 upload limit проверяется реальным HTTP-запросом и настройками web-сервера.
 
+## Возобновление после паузы: 2026-11-06
+
+Октябрьский вывод владельца не подтверждает состояние стенда сегодня.
+Сначала повторить пять команд предварительной проверки выше; при остановленных
+контейнерах прислать их статус, прежде чем выполнять установку. Не показывать
+`docker compose config`, переменные окружения, config.php или SQL в чате.
+
+Дополнительно из папки лаборатории можно проверить schema/количество строк и
+хранилище без смены ветки, миграций или чтения пользовательского содержимого.
+Следующий PHP-блок использует только schema SELECT/count и filesystem predicates;
+он проверен на облачном Flarum 2.0.2. Синтаксис PowerShell pipeline рассчитан на
+5.1+, но выполнение на Windows владельца ещё не подтверждено. При ошибке
+остановиться и прислать её класс, не полный stack trace/config.
+
+```powershell
+$mapsReadOnlyProbe = @'
+<?php
+try {
+    $site = require getcwd().'/site.php';
+    $container = $site->bootApp()->getContainer();
+    $db = $container->make(\Illuminate\Database\ConnectionInterface::class);
+    $schema = $db->getSchemaBuilder();
+    $columns = [];
+    foreach (['display_position', 'starts_collapsed'] as $column) {
+        $columns[$column] = $schema->hasColumn('chak_map_embeds', $column);
+    }
+    $counts = [];
+    foreach (['chak_maps', 'chak_tokens', 'chak_map_embeds'] as $table) {
+        $counts[$table] = $db->table($table)->count();
+    }
+    $paths = $container->make(\Flarum\Foundation\Paths::class);
+    echo json_encode([
+        'presentationColumns' => $columns,
+        'rowCounts' => $counts,
+        'uploadDirectoryPresent' => is_dir($paths->storage.'/interactive-maps'),
+        'storageWritable' => is_writable($paths->storage),
+    ], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR).PHP_EOL;
+} catch (\Throwable $error) {
+    fwrite(STDERR, 'Read-only preflight failed: '.get_class($error).PHP_EOL);
+    exit(1);
+}
+'@
+$mapsReadOnlyProbe | docker compose exec -T -w /var/www/flarum app php
+if ($LASTEXITCODE -ne 0) { throw "Read-only preflight failed. Stop here." }
+```
+
+`presentationColumns` оба false — прежняя схема; оба true — поля уже есть,
+проверить точный checkout и историю обновления перед повторным применением;
+одно true — частичная схема, установка останавливается до разбора.
+`rowCounts` — только числа, без имён/содержимого. `uploadDirectoryPresent=false`
+допустимо до первой загрузки, `storageWritable=false` требует исправления
+доступа перед загрузкой. CLI-проверка не заменяет браузерную авторизацию и
+реальный HTTP upload. Не переносить эти облачные результаты на стенд владельца.
+
 ## Что согласуется отдельно
 
 Одна additive migration:
