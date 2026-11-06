@@ -93,4 +93,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check orchestration and stop-on-error behavior
         shell: powershell
-        run: ./tests/labScriptTest.ps1
+        run: |
+          ./tests/labScriptTest.ps1
+          ./tests/labBackupScriptTest.ps1
