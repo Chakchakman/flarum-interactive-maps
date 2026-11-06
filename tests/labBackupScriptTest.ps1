@@ -56,8 +56,9 @@ try {
     $complete = @(Get-ChildItem -Path (Join-Path $fixture '_backups/*/BACKUP-COMPLETE.txt'))
     if ($complete.Count -ne 1) { throw 'Exactly one complete backup is required.' }
     $backup = $complete[0].Directory.FullName
-    $checksums = @(Get-Content -Raw (Join-Path $backup 'checksums.json') | ConvertFrom-Json)
-    if ($checksums.Count -ne 3) { throw 'Missing backup manifest entries.' }
+    $checksums = ConvertFrom-Json -InputObject ([IO.File]::ReadAllText((Join-Path $backup 'checksums.json')))
+    if ($checksums.Count -ne 3) { throw "Missing backup manifest entries: $($checksums.Count)." }
+    if (($checksums.Name | Sort-Object) -join ',' -ne 'database.sql,extension.tgz,storage.tgz') { throw 'Wrong backup manifest file names.' }
     foreach ($entry in $checksums) {
         if ($entry.Length -le 0 -or $entry.SHA256 -ne (Get-FileHash (Join-Path $backup $entry.Name)).Hash) { throw 'Backup checksum mismatch.' }
     }
