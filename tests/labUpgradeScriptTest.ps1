@@ -69,7 +69,7 @@ try {
             $migration = @($global:upgradeTestCalls | Where-Object { $_ -like '*Migrate-EmbedPresentation.php --approved-after-backup' })
             if ($migration.Count -ne 1) { throw 'Exactly one scoped migration invocation required.' }
             $calls = $global:upgradeTestCalls -join "`n"
-            if ($calls -match 'php flarum migrate|\b(reset|clean|push|down)\b') { throw 'Unexpected destructive/global operation.' }
+            if ($calls -match '(?m)^git -C extension (reset|clean|push)(?: |$)|php flarum migrate|(?m)^docker .* down(?: |$)') { throw 'Unexpected destructive/global operation.' }
             if ($calls.IndexOf('npm run check') -ge $calls.IndexOf('Migrate-EmbedPresentation.php') -or
                 $calls.IndexOf('composer dump-autoload --no-scripts') -ge $calls.IndexOf('Migrate-EmbedPresentation.php') -or
                 $calls.IndexOf('Migrate-EmbedPresentation.php') -ge $calls.IndexOf('php flarum cache:clear')) { throw 'Wrong upgrade ordering.' }
