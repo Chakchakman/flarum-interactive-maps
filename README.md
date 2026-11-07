@@ -58,6 +58,8 @@ docker compose run --rm node npm run check
 
 Перед обновлением существующего Windows-стенда подготовлен [скрипт резервирования и точная команда](docs/UPGRADE-embed-upload.md#резервная-копия-до-установки): текущая extension, SQL и storage/composer, проверка архивов и SHA256. Windows-проверки helper прошли; скрипт не переключает checkout и не применяет миграции.
 
+На 2026-11-07 копия Windows-стенда подтверждена, владелец разрешил точечную миграцию. [Установка одним проверенным скриптом](docs/UPGRADE-embed-upload.md#установка-после-полученного-разрешения): устанавливается прежний auto-tested494b41d; фактическое обновление/ручная приёмка ещё ожидаются.
+
 ## Что дальше
 
 Одобренные новые возможности реализованы в `feature/embed-presentation` и `feature/local-map-backgrounds`; [QA отображения](docs/QA-embed-presentation.md) и [QA загрузки](docs/QA-local-map-backgrounds.md). Дополнение `feature/local-token-images`: [фишки и буфер обмена](docs/QA-token-images-clipboard.md). Общая новая сборка потребует согласованной миграции двух полей прикрепления и отдельной ручной приёмки.

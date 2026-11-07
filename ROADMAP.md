@@ -122,3 +122,7 @@ feature/local-map-backgrounds implements private PNG/JPEG upload/create/replace 
 Owner explicitly added local character images and clipboard image paste to the background-upload task. `feature/local-token-images` implements create/replace, 512 px proportional token resize and explicit clipboard/file controls for both image types. Existing move/owner/privacy rules remain intact; no extra schema or dependency. Local 68 JS/build, PHP checks and full 34 browser cases passed, followed by 7 focused cases after the final picker refinement; remote CI and owner acceptance are separate gates. See [QA](docs/QA-token-images-clipboard.md). Presentation schema application still needs a fresh backup and explicit approval. Complete acceptance/release checklist before the next substantial v0.4 measurement/marker task; layers, fog and presence are not silently included.
 
 Final source `494b41d`: runtime40604488627 (10m36s) and Extension40604488681 (29s) succeeded, including 34 browser cases, 68 JS/build, PHP/Windows and Composer/npm audits. Owner acceptance and presentation-schema application remain pending.
+
+### Approved lab upgrade — 2026-11-07
+
+Owner confirmed fresh backup and explicitly approved the two presentation columns. Checked installer3ec8a0a is ready; actual Windows deployment and functional acceptance are pending. No new feature/version or release permission is implied. Next gate remains owner QA/release checklist before measurement/markers.

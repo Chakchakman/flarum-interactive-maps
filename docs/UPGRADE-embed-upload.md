@@ -183,15 +183,49 @@ helper фактически подтверждён. До установки не
    Записать HEAD и путь резервной копии. Проверить обычный форум, затем функции
    из QA отображения/загрузки. При сбое прислать шаг и вывод без паролей/cookies/SQL.
 
-Согласование получено 2026-11-07; backup/preflight подтверждены. Helper установки
-`scripts/Upgrade-EmbedUploadLab.ps1` подготовлен в fix/lab-approved-upgrade;
-точный hash-checked download/run блок добавляется после Windows CI. Этот helper
-скачивается вне extension, поскольку целевой494b41d его ещё не содержит.
-BackupPath указывает на подтверждённую копию, -ApprovedEmbedMigration отражает
-уже полученное разрешение. Не применять старый stash поверх новой сборки.
-При ошибке остановиться и прислать шаг/текст, не повторять с reset/SQL restore.
-Если после backup возобновлялись записи, сначала выполнить Backup-Lab заново
-и использовать новый BackupPath; повторного одобрения той же миграции не нужно.
+## Установка после полученного разрешения
+
+Согласование получено 2026-11-07; backup/preflight подтверждены.
+Точный helper **3ec8a0a2cb4fd8c825a277016fb9b3f6d89ef925**, fix/lab-approved-upgrade,
+[CI42334792387](https://github.com/Chakchakman/flarum-interactive-maps/actions/runs/42334792387) — Success30s,
+включая Windows PowerShell5.1 success/11 failure guards, прежние backup/lab tests,
+68 JS/build/PHP/npm audit. Helper version не меняет целевой код расширения494b41d.
+Native Git stash/switch/source pin дополнительно проверены в отдельной синтетической
+копии репозитория; прежняя baseline branch сохранена, stash содержит изменённые
+файлы. Windows+реальный Docker upgrade владельца ещё не выполнялся.
+
+Сохранить pause записей на время установки. Если после копии возобновлялись
+записи — сначала Backup-Lab заново и заменить BackupPath; повторного разрешения
+той же миграции не нужно. Выполнить из папки лаборатории:
+
+```powershell
+& {
+    $ErrorActionPreference = 'Stop'
+    New-Item -ItemType Directory -Path .\_tools -Force | Out-Null
+    $mapsUpgradeScript = Join-Path (Get-Location).Path '_tools\Upgrade-EmbedUploadLab-3ec8a0a.ps1'
+    Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/Chakchakman/flarum-interactive-maps/3ec8a0a2cb4fd8c825a277016fb9b3f6d89ef925/scripts/Upgrade-EmbedUploadLab.ps1' -OutFile $mapsUpgradeScript
+    if ((Get-FileHash -LiteralPath $mapsUpgradeScript -Algorithm SHA256).Hash -ne '6a4dd6a6542fb5cfa64f76581b7f1a97f9a7ad2a169773294015dc5b871edecf') {
+        throw 'Installer checksum mismatch. Stop here.'
+    }
+    Unblock-File -LiteralPath $mapsUpgradeScript
+    powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File $mapsUpgradeScript -LabPath (Get-Location).Path -BackupPath '_backups\maps-backup-20261106-231128-4247d5f2' -ApprovedEmbedMigration
+    if ($LASTEXITCODE -ne 0) { throw 'Upgrade stopped. Send the last step/error; do not reset or restore SQL.' }
+}
+```
+
+Script проверяет три hashes/размеры backup и marker/HEAD, sourcee917eaa,
+защищённые ветки и только ожидаемые unstaged dist. Fetch/source resolution до
+stash; stash SHA сохраняется в backup/UPGRADE-STASH.txt. Новый test branch,
+npm ci/check, Composer validate и dump-autoload --no-scripts предшествуют
+только reviewed Migrate-EmbedPresentation helper. После cache/restart app и
+HTTP200 создаётся UPGRADE-COMPLETE.txt. Глобальные миграции/SQL restore не вызываются.
+
+При ошибке остановиться и прислать последний шаг/текст, не повторять с reset,
+restore или старым stash поверх новой сборки. Скрипт не делает автоматический
+rollback. Не запускать заново после частичной установки без разбора состояния.
+После успеха Ctrl+F5 во всех профилях, обычный форум/BBCode и QA presentation,
+background/token uploads/clipboard, два аккаунта с проверкой прав и sync.
+Успех CLI/HTTP200 не заменяет эту ручную приёмку.
 
 ## Сохранность файлов и откат
 
